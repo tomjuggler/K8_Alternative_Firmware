@@ -44,21 +44,44 @@ CNec IRLremote;
 //CHashIR IRLremote;
 //#define IRLremote Sony12
 
-#define pinLed 3
+//#define pinLed 3
 
 boolean ready = false;
+
+int blueLed = 1; //on right
+int greenLed = 3; //middle
+int redLed = 4; //left
+int delayTime = 250;
+
+int selection = 0;
+int maxSelection = 3;
+
 void setup()
 {
+pinMode(blueLed, OUTPUT); 
+pinMode(greenLed, OUTPUT); 
+pinMode(redLed, OUTPUT); 
 //  Serial.begin(115200);
 //  Serial.println(F("Startup"));
 //GIMSK = 0b00100000;    // turns on pin change interrupts
 //    PCMSK = 0b00010011;    // turn on interrupts on pins PB0, PB1, &amp;amp; PB4
 //    sei();
   // Set LED to output
-  pinMode(pinLed, OUTPUT);
-  digitalWrite(pinLed, HIGH);
-delay(500);
-digitalWrite(pinLed, LOW);
+//  pinMode(pinLed, OUTPUT);
+//  digitalWrite(pinLed, HIGH);
+Red();
+  delay(delayTime);
+  Off();
+  delay(delayTime);
+  Green();
+  delay(delayTime);
+  Off();
+  delay(delayTime);
+  Blue();
+  delay(delayTime);
+  Off();
+  delay(delayTime);
+//digitalWrite(pinLed, LOW);
   // Start reading the remote. PinInterrupt or PinChangeInterrupt* will automatically be selected
 //  if (!IRLremote.begin(pinIR)){
   if (!IRLremote.begin(pinIR))
@@ -68,10 +91,31 @@ digitalWrite(pinLed, LOW);
 
 void loop()
 {
+ 
   
   if(ready){
-    digitalWrite(pinLed, HIGH);
+    Green();
+   selection++;
+   if(selection >= maxSelection){
+    selection = 0;
+   }
   }
+  /*
+  switch(selection){
+      case 0: {
+        Red();
+      }
+      case 1: {
+        Green();
+      }
+      case 2: {
+        Blue();
+      }
+      default:{
+        Off(); //never gets here
+      }
+   }
+   */
   // Check if we are currently receiving data
   //if (!IRLremote.receiving()) {
     // Run code that disables interrupts, such as some led strips
@@ -80,9 +124,10 @@ void loop()
   // Check if new IR protocol data is available
   if (IRLremote.available())
   {
-    ready = true;
+    Off();
+//    ready = true;
     // Light Led
-    digitalWrite(pinLed, HIGH);
+//    digitalWrite(pinLed, HIGH);
 
     // Get the new data from the remote
     auto data = IRLremote.read();
@@ -95,9 +140,118 @@ void loop()
 //    Serial.println();
 
     // Turn Led off after printing the data
-    digitalWrite(pinLed, LOW);
+//    digitalWrite(pinLed, LOW);
+if(data.command == 9){
     ready = true;
+    }
   }
-  
-  
 }
+
+//0a
+    void Red() {
+    Off();
+    digitalWrite(redLed, HIGH);
+//    mySerial.println("Red");
+    }      
+//1b green
+    void Green() {
+    Off();
+    digitalWrite(greenLed, HIGH);
+//    mySerial.println("Green");
+    }
+//2c blue
+    void Blue() {
+    Off();
+    digitalWrite(blueLed, HIGH);
+//    mySerial.println("Blue");
+    }
+//3d Yellow
+    void Yellow() {
+   Off();
+   
+   // mySerial.println("d");
+    }
+//4e Cyan
+    void Cyan() {
+    Off();
+    
+   // mySerial.println("e");
+    }
+//5f Magenta
+    void Magenta() {
+   
+   // mySerial.println("f");
+    }
+//6g White
+    void White() {
+   
+ //   mySerial.println("g");
+    }
+//7h Fade
+    void Fade() {
+    
+   // mySerial.println("h");
+    }
+//8i Strobe+
+    void Strobeplus() {
+    
+  //  mySerial.println("i");
+    }
+//9j RGBStrobe
+    void RGBStrobe() {
+    
+   // mySerial.println("j");
+    }
+//10k Rainbow
+    void Rainbow() {
+    
+  //  mySerial.println("k");
+    }
+//11L Halfstrobe
+    void Halfstrobe() {
+    
+  //  mySerial.println("l");
+    }
+//12m BGStrobe
+    void BGStrobe() {
+    
+  //  mySerial.println("m");
+    }
+//13n GRStrobe
+    void GRStrobe() {
+    
+  //  mySerial.println("n");
+    }
+//14oOff
+    void Off() {
+digitalWrite(greenLed, LOW);
+   digitalWrite(blueLed, LOW);
+   digitalWrite(redLed, LOW);
+   
+  //  mySerial.println("o");
+    }
+//15p Next
+    void Next() {
+    
+   // mySerial.println("p");
+    }
+//16q Demo
+    void Demo() {
+    
+   // mySerial.println("q");
+    }
+//17r Previous
+    void Previous() {
+    
+  //  mySerial.println("r");
+    }
+
+
+
+
+
+  
+
+
+
+
