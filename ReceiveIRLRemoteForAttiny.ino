@@ -94,13 +94,14 @@ void loop()
  
   
   if(ready){
-    Green();
+    Off();
+    //not using?
    selection++;
    if(selection >= maxSelection){
     selection = 0;
    }
   }
-  /*
+ /*
   switch(selection){
       case 0: {
         Red();
@@ -115,7 +116,7 @@ void loop()
         Off(); //never gets here
       }
    }
-   */
+  */
   // Check if we are currently receiving data
   //if (!IRLremote.receiving()) {
     // Run code that disables interrupts, such as some led strips
@@ -124,7 +125,7 @@ void loop()
   // Check if new IR protocol data is available
   if (IRLremote.available())
   {
-    Off();
+//    Off();
 //    ready = true;
     // Light Led
 //    digitalWrite(pinLed, HIGH);
@@ -142,7 +143,15 @@ void loop()
     // Turn Led off after printing the data
 //    digitalWrite(pinLed, LOW);
 if(data.command == 9){
-    ready = true;
+  Off();
+    Green();
+    }
+    else if(data.command == 8){
+      Off();
+    Red();
+    }
+    else if(data.command == 15){ //need to decode letters 15 not working...      Off();
+    Blue();
     }
   }
 }
