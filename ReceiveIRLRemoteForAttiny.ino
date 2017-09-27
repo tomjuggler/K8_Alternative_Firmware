@@ -1,3 +1,5 @@
+
+
 /*
   Copyright (c) 2014-2015 NicoHood
   See the readme for credit to other people.
@@ -33,6 +35,7 @@
 // include PinChangeInterrupt library* BEFORE IRLremote to acces more pins if needed
 //#include "PinChangeInterrupt.h"
 //
+#include <EEPROM.h>
 #include "IRLremote.h"
 
 // Choose a valid PinInterrupt or PinChangeInterrupt* pin of your Arduino board
@@ -53,37 +56,53 @@ boolean ready = false;
 int blueLed = 1; //on right
 int greenLed = 3; //middle
 int redLed = 4; //left
-int delayTime = 250;
+int delayTime = 25;
 
 int selection = 0;
 int maxSelection = 3;
 
 ////////////////////////HEX codes:///////////////////////////
-uint8_t greenHEX = 0x9;
-uint8_t redHEX = 0x8;
-uint8_t blueHEX = 0xA;
-uint8_t yellowHEX = 0xB;
-uint8_t cyanHEX = 0xD;
-uint8_t magentaHEX = 0xC;
-uint8_t whiteHEX = 0xE;
-uint8_t fadeHEX = 0xF;
-uint8_t strobeplusHEX = 0x15;
-uint8_t RGBStrobeHEX = 0x14;
-uint8_t rainbowHEX = 0x16;
-uint8_t halfstrobeHEX = 0x17;
-uint8_t BGStrobeHEX = 0x19;
-uint8_t GRStrobeHEX = 0x18;
-uint8_t onHEX = 0x6;
-uint8_t offHEX = 0x7;
-uint8_t nextHEX = 0x4;
-uint8_t previousHEX = 0x5;
-uint8_t demoHEX = 0x1A;
-uint8_t extraHEX1 = 0x1B;
-uint8_t extraHEX2 = 0x11;
-uint8_t extraHEX3 = 0x10;
-uint8_t extraHEX4 = 0x12;
-uint8_t extraHEX5 = 0x13;
+static uint8_t greenHEX = 0x9;
+static uint8_t redHEX = 0x8;
+static uint8_t blueHEX = 0xA;
+static uint8_t yellowHEX = 0xB;
+static uint8_t cyanHEX = 0xD;
+static uint8_t magentaHEX = 0xC;
+static uint8_t whiteHEX = 0xE;
+static uint8_t fadeHEX = 0xF;
+static uint8_t strobeplusHEX = 0x15;
+static uint8_t RGBStrobeHEX = 0x14;
+static uint8_t rainbowHEX = 0x16;
+static uint8_t halfstrobeHEX = 0x17;
+static uint8_t BGStrobeHEX = 0x19;
+static uint8_t GRStrobeHEX = 0x18;
+static uint8_t onHEX = 0x6;
+static uint8_t offHEX = 0x7;
+static uint8_t nextHEX = 0x4;
+static uint8_t previousHEX = 0x5;
+static uint8_t demoHEX = 0x1A;
+static uint8_t extraHEX1 = 0x1B;
+static uint8_t extraHEX2 = 0x11;
+static uint8_t extraHEX3 = 0x10;
+static uint8_t extraHEX4 = 0x12;
+static uint8_t extraHEX5 = 0x13;
 
+unsigned long previousMillis = 0;        // will store last time LED was updated
+
+// constants won't change:
+long interval = 125;           // interval at which to blink (milliseconds)
+int ledState = LOW;
+boolean flashy = false;
+
+//volatile uint8_t currentSignal = 0x8; //for flashy
+//volatile uint8_t sendSignal = 0x9; //for normal
+volatile uint8_t inSignal = 0xA; //for both
+volatile uint8_t prevSignal = 0xA; //for memory
+
+uint8_t threeWay = 0;
+uint8_t fadeAWay = 0;
+uint8_t rainbowWay = 0;
+uint8_t plusWay = 0;
 
 void setup()
 {
@@ -92,202 +111,432 @@ void setup()
   pinMode(redLed, OUTPUT);
   //  Serial.begin(115200);
   //  Serial.println(F("Startup"));
-  //GIMSK = 0b00100000;    // turns on pin change interrupts
-  //    PCMSK = 0b00010011;    // turn on interrupts on pins PB0, PB1, &amp;amp; PB4
-  //    sei();
-  // Set LED to output
-  //  pinMode(pinLed, OUTPUT);
-  //  digitalWrite(pinLed, HIGH);
-  Red();
-  delay(delayTime);
-  Off();
-  delay(delayTime);
-  Green();
-  delay(delayTime);
-  Off();
-  delay(delayTime);
+
   Blue();
-  delay(delayTime);
-  Off();
-  delay(delayTime);
-  //digitalWrite(pinLed, LOW);
   // Start reading the remote. PinInterrupt or PinChangeInterrupt* will automatically be selected
-  //  if (!IRLremote.begin(pinIR)){
-  if (!IRLremote.begin(pinIR))
-  {
+  if (!IRLremote.begin(pinIR)) {
   }
 }
 
 void loop()
 {
 
-
-  if (ready) {
-    Off();
-    //not using?
-    selection++;
-    if (selection >= maxSelection) {
-      selection = 0;
-    }
-  }
-  /*
-    switch(selection){
-       case 0: {
-         Red();
-       }
-       case 1: {
-         Green();
-       }
-       case 2: {
-         Blue();
-       }
-       default:{
-         Off(); //never gets here
-       }
-    }
-  */
   // Check if we are currently receiving data
   //if (!IRLremote.receiving()) {
   // Run code that disables interrupts, such as some led strips
   //}
+//get previous signal for memory:
 
   // Check if new IR protocol data is available
-  if (IRLremote.available())
-  {
-    //    Off();
-    //    ready = true;
-    // Light Led
-    //    digitalWrite(pinLed, HIGH);
-
-    // Get the new data from the remote
+ 
+  if (IRLremote.available()) {
     auto data = IRLremote.read();
+    if (data.command == 0x0) {
 
-    // Print the protocol data
-    //    Serial.print(F("Address: 0x"));
-    //    Serial.println(data.address, HEX);
-    //    Serial.print(F("Command: 0x"));
-    //    Serial.println(data.command, HEX);
-    //    Serial.println();
+    } else {
+     inSignal = data.command;
+    }
+  }
 
-    // Turn Led off after printing the data
-    //    digitalWrite(pinLed, LOW);
-    testCommand(data.command);
-
+  if (flashy) {
+    flash();
+  } else {
+    testCommand();
   }
 }
 
-void testCommand(uint8_t inSignal) {
+void testCommand() {
   if (inSignal == greenHEX) { //Green
-    Off();
-    Blue();
-  } else if (inSignal == redHEX) { //Red
-    Off();
-    Red();
-  } else if (inSignal == blueHEX) { //Blue //need to decode letters 15 not working...      Off();
     Green();
+    prevSignal = inSignal;
+  } else if (inSignal == redHEX) { //Red
+    Red();
+    prevSignal = inSignal;
+  } else if (inSignal == blueHEX) { //Blue
+    Blue();
+    prevSignal = inSignal;
+  }  else if (inSignal == yellowHEX) {
+    Yellow();
+    prevSignal = inSignal;
+  } else if (inSignal == cyanHEX) {
+    Cyan();
+    prevSignal = inSignal;
+  } else if (inSignal == magentaHEX) {
+    Magenta();
+    prevSignal = inSignal;
+  } else if (inSignal == whiteHEX) {
+    White();
+    prevSignal = inSignal;
+  } else if (inSignal == fadeHEX) {
+    flashy = false; //not working in flashy mode
+    Fade();
+    prevSignal = inSignal;
+  } else if (inSignal == strobeplusHEX) {
+    flashy = false; //not working in flashy mode
+    Strobeplus();
+    prevSignal = inSignal;
+  } else if (inSignal == RGBStrobeHEX) {
+    flashy = false; //not working in flashy mode
+    RGBStrobe();
+    prevSignal = inSignal;
+  } else if (inSignal == rainbowHEX) {
+    flashy = false; //not working in flashy mode
+    Rainbow();
+    prevSignal = inSignal;
+  } else if (inSignal == halfstrobeHEX) {
+    flashy = false; //not working in flashy mode
+    Halfstrobe();
+    prevSignal = inSignal;
+  } else if (inSignal == BGStrobeHEX) {
+    flashy = false; //not working in flashy mode
+    BGStrobe();
+    prevSignal = inSignal;
+  }else if (inSignal == GRStrobeHEX) {
+    flashy = false; //not working in flashy mode
+    GRStrobe();
+    prevSignal = inSignal;
+  } else if (inSignal == nextHEX) {
+    Next();
+    inSignal = prevSignal; //now switch to whatever we were doing before .. need to test for non-colour signals here though...
+  }else if (inSignal == previousHEX) {
+    Previous();
+    inSignal = prevSignal;
+  } else if (inSignal == extraHEX1) {
+    Extra1();
+    inSignal = prevSignal;
+  } else if (inSignal == extraHEX5) {
+    Extra5();
+    inSignal = prevSignal;
+  } else if (inSignal == offHEX) {
+    Off();    
+  } else if (inSignal == onHEX) {
+    inSignal = prevSignal;   
   }
+
+
 }
 
+void flash() {
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      Off();
+      ledState = HIGH;
+    } else {
+      testCommand();
+      ledState = LOW;
+    }
+  }
+
+}
 //0a
 void Red() {
-  Off();
+  //  flashy = false; //test
+//  Off(); //this is having some sort of adversarial effect, too many concurrent digital writes to the same pin???
   digitalWrite(redLed, HIGH);
-  
+  digitalWrite(blueLed, LOW);
+  digitalWrite(greenLed, LOW);
 }
 //1b green
 void Green() {
-  Off();
+//  Off();
   digitalWrite(greenLed, HIGH);
- 
+  digitalWrite(blueLed, LOW);
+  digitalWrite(redLed, LOW);
 }
 //2c blue
 void Blue() {
-  Off();
+//  Off();
   digitalWrite(blueLed, HIGH);
- 
+  digitalWrite(redLed, LOW);
+  digitalWrite(greenLed, LOW);
 }
 //3d Yellow
 void Yellow() {
-  Off();
-
- 
+//  Off();
+  digitalWrite(greenLed, HIGH);
+  digitalWrite(redLed, HIGH);
+  digitalWrite(blueLed, LOW);
 }
 //4e Cyan
 void Cyan() {
-  Off();
-
- 
+//  Off();
+  digitalWrite(blueLed, HIGH);
+  digitalWrite(greenLed, HIGH);
+  digitalWrite(redLed, LOW);
 }
 //5f Magenta
 void Magenta() {
-  Off();
-
-
+//  Off();
+  digitalWrite(blueLed, HIGH);
+  digitalWrite(redLed, HIGH);
+  digitalWrite(greenLed, LOW);
 }
 //6g White
 void White() {
-
- 
+//  Off();
+  digitalWrite(blueLed, HIGH);
+  digitalWrite(greenLed, HIGH);
+  digitalWrite(redLed, HIGH);
 }
 //7h Fade
 void Fade() {
+  //after some testing, on attiny85 Red and Blue pins support pwm but green does not. Need another solution for fading: 
+  
+  for(int i = 1; i < 255; i++){
+    digitalWrite(blueLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(blueLed, LOW);
+    delayMicroseconds(1000 - i);
+    
+    digitalWrite(greenLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(greenLed, LOW);
+    delayMicroseconds(1000 - i);
 
- 
-}
+    digitalWrite(redLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(redLed, LOW);
+    delayMicroseconds(1000 - i);
+  }
+  for(int i = 255; i > 0; i--){
+    digitalWrite(blueLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(blueLed, LOW);
+    delayMicroseconds(1000 - i);
+    
+    digitalWrite(greenLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(greenLed, LOW);
+    delayMicroseconds(1000 - i);
+
+    digitalWrite(redLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(redLed, LOW);
+    delayMicroseconds(1000 - i);
+  }
+  /*
+  for(int i = 1; i < 255; i++){
+    digitalWrite(blueLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(blueLed, LOW);
+    delayMicroseconds(1000 - i);
+    
+    digitalWrite(greenLed, LOW);
+    delayMicroseconds(i);
+    digitalWrite(greenLed, HIGH);
+    delayMicroseconds(1000 - i);
+
+    digitalWrite(redLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(redLed, LOW);
+    delayMicroseconds(1000 - i);
+  }
+  for(int i = 255; i > 0; i--){
+    digitalWrite(blueLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(blueLed, LOW);
+    delayMicroseconds(1000 - i);
+    
+    digitalWrite(greenLed, LOW);
+    delayMicroseconds(i);
+    digitalWrite(greenLed, HIGH);
+    delayMicroseconds(1000 - i);
+
+    digitalWrite(redLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(redLed, LOW);
+    delayMicroseconds(1000 - i);
+  }
+  for(int i = 1; i < 255; i++){
+    digitalWrite(blueLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(blueLed, LOW);
+    delayMicroseconds(1000 - i);
+    
+    digitalWrite(greenLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(greenLed, LOW);
+    delayMicroseconds(1000 - i);
+
+    digitalWrite(redLed, LOW);
+    delayMicroseconds(i);
+    digitalWrite(redLed, HIGH);
+    delayMicroseconds(1000 - i);
+  }
+  for(int i = 255; i > 0; i--){
+    digitalWrite(blueLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(blueLed, LOW);
+    delayMicroseconds(1000 - i);
+    
+    digitalWrite(greenLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(greenLed, LOW);
+    delayMicroseconds(1000 - i);
+
+    digitalWrite(redLed, LOW);
+    delayMicroseconds(i);
+    digitalWrite(redLed, HIGH);
+    delayMicroseconds(1000 - i);
+  }
+ */ 
+  }
 //8i Strobe+
 void Strobeplus() {
-
- 
+  interval = 2;
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    if (plusWay==0) {
+      Red();
+    } else if(plusWay==1) {
+      Off();
+    } else if(plusWay==2) {
+      Blue();
+    } else if(plusWay==3) {
+      Off();
+    } 
+    plusWay++;
+    if(plusWay>3){
+      plusWay = 0;
+    }
+  }
 }
 //9j RGBStrobe
 void RGBStrobe() {
-
-  
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    if (threeWay==0) {
+      Red();
+    } else if(threeWay==1) {
+      Green();
+    } else if(threeWay==2) {
+      Blue();
+    } 
+    threeWay++;
+    if(threeWay>2){
+      threeWay = 0;
+    }
+  }
 }
 //10k Rainbow
 void Rainbow() {
-
-  
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    if (rainbowWay==0) {
+      Red();
+    } else if(rainbowWay==1) {
+      Green();
+    } else if(rainbowWay==2) {
+      Blue();
+    } else if(rainbowWay==3) {
+      Cyan();
+    } else if(rainbowWay==4) {
+      Yellow();
+    } else if(rainbowWay==5) {
+      Magenta();
+    } 
+    rainbowWay++;
+    if(rainbowWay>5){
+      rainbowWay = 0;
+    }
+  }
 }
 //11L Halfstrobe
 void Halfstrobe() {
-
-  
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      Red();
+      ledState = HIGH;
+    } else {
+      Blue();
+      ledState = LOW;
+    }
+  }
 }
 //12m BGStrobe
 void BGStrobe() {
-
-  
+ unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      Blue();
+      ledState = HIGH;
+    } else {
+      Green();
+      ledState = LOW;
+    }
+  }
 }
 //13n GRStrobe
 void GRStrobe() {
-
-  
+ unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      Green();
+      ledState = HIGH;
+    } else {
+      Red();
+      ledState = LOW;
+    }
+  }
 }
 //14oOff
 void Off() {
   digitalWrite(greenLed, LOW);
   digitalWrite(blueLed, LOW);
   digitalWrite(redLed, LOW);
-
-  
 }
 //15p Next
 void Next() {
-
-  
+interval-=20;
+  if(interval < 5){
+    interval = 5;
+  }
 }
 //16q Demo
 void Demo() {
+Off();
 
-  
 }
 //17r Previous
 void Previous() {
-
-  
+  interval+=20;
+  if(interval > 500){
+    interval = 500;
+  }
 }
 
+void Extra1() {
+  flashy = true;
+}
+void Extra2() {
+
+}
+void Extra3() {
+
+}
+void Extra4() {
+
+}
+void Extra5() {
+  flashy = false;
+}
 
 
 
