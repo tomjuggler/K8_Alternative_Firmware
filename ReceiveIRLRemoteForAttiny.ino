@@ -286,104 +286,39 @@ void White() {
 void Fade() {
   //after some testing, on attiny85 Red and Blue pins support pwm but green does not. Need another solution for fading: 
   
-  for(int i = 1; i < 255; i++){
+  for(int i = 1; i < 1000; i++){
     digitalWrite(blueLed, HIGH);
     delayMicroseconds(i);
     digitalWrite(blueLed, LOW);
     delayMicroseconds(1000 - i);
     
-    digitalWrite(greenLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(greenLed, LOW);
-    delayMicroseconds(1000 - i);
-
-    digitalWrite(redLed, HIGH);
-    delayMicroseconds(i);
+//    digitalWrite(greenLed, HIGH);
+//    delayMicroseconds(i);
+//    digitalWrite(greenLed, LOW);
+//    delayMicroseconds(1000 - i);
+//
     digitalWrite(redLed, LOW);
+    delayMicroseconds(i);
+    digitalWrite(redLed, HIGH);
     delayMicroseconds(1000 - i);
   }
-  for(int i = 255; i > 0; i--){
+  for(int i = 1000; i > 0; i--){
     digitalWrite(blueLed, HIGH);
     delayMicroseconds(i);
     digitalWrite(blueLed, LOW);
     delayMicroseconds(1000 - i);
     
-    digitalWrite(greenLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(greenLed, LOW);
-    delayMicroseconds(1000 - i);
-
-    digitalWrite(redLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(redLed, LOW);
-    delayMicroseconds(1000 - i);
-  }
-  /*
-  for(int i = 1; i < 255; i++){
-    digitalWrite(blueLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(blueLed, LOW);
-    delayMicroseconds(1000 - i);
-    
-    digitalWrite(greenLed, LOW);
-    delayMicroseconds(i);
-    digitalWrite(greenLed, HIGH);
-    delayMicroseconds(1000 - i);
-
-    digitalWrite(redLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(redLed, LOW);
-    delayMicroseconds(1000 - i);
-  }
-  for(int i = 255; i > 0; i--){
-    digitalWrite(blueLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(blueLed, LOW);
-    delayMicroseconds(1000 - i);
-    
-    digitalWrite(greenLed, LOW);
-    delayMicroseconds(i);
-    digitalWrite(greenLed, HIGH);
-    delayMicroseconds(1000 - i);
-
-    digitalWrite(redLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(redLed, LOW);
-    delayMicroseconds(1000 - i);
-  }
-  for(int i = 1; i < 255; i++){
-    digitalWrite(blueLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(blueLed, LOW);
-    delayMicroseconds(1000 - i);
-    
-    digitalWrite(greenLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(greenLed, LOW);
-    delayMicroseconds(1000 - i);
-
+//    digitalWrite(greenLed, HIGH);
+//    delayMicroseconds(i);
+//    digitalWrite(greenLed, LOW);
+//    delayMicroseconds(1000 - i);
+//
     digitalWrite(redLed, LOW);
     delayMicroseconds(i);
     digitalWrite(redLed, HIGH);
     delayMicroseconds(1000 - i);
   }
-  for(int i = 255; i > 0; i--){
-    digitalWrite(blueLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(blueLed, LOW);
-    delayMicroseconds(1000 - i);
-    
-    digitalWrite(greenLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(greenLed, LOW);
-    delayMicroseconds(1000 - i);
-
-    digitalWrite(redLed, LOW);
-    delayMicroseconds(i);
-    digitalWrite(redLed, HIGH);
-    delayMicroseconds(1000 - i);
-  }
- */ 
+  
   }
 //8i Strobe+
 void Strobeplus() {
