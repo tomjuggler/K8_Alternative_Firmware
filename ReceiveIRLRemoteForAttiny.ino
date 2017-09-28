@@ -1,4 +1,10 @@
-
+/*
+ * LED code by Tom Hastings
+ * upgrading k8 juggling clubs internal code
+ * run on attiny85 @8mhz internal clock
+ * led's switched via transistors
+ *
+ */
 
 /*
   Copyright (c) 2014-2015 NicoHood
