@@ -119,11 +119,37 @@ void setup()
   //  Serial.println(F("Startup"));
 
   Blue();
-  // Start reading the remote. PinInterrupt or PinChangeInterrupt* will automatically be selected
+//   Start reading the remote. PinInterrupt or PinChangeInterrupt* will automatically be selected
   if (!IRLremote.begin(pinIR)) {
   }
+/*
+ //seems that timer is not working, too much conflict
+//timer test Attiny: //////////////////////////////////////////////////////////
+  cli();
+    TCCR1=0;
+    TCNT1 = 0;                  //zero the timer
+    GTCCR = _BV(PSR1);          //reset the prescaler
+    OCR1A=243;           //contador CTC, tiene un tamaño de 2^8-1=255
+    OCR1C=243;              
+    TCCR1 |= (1<<CTC1);  //el analogo a WGM12 en los atmega
+    TCCR1 |= (1<<CS10);//
+    TCCR1 |= (1<<CS11);//
+    TCCR1 |= (1<<CS12);
+    TCCR1 |= (1<<CS13);//   CS10=1, CS11=1, CS12=1, CS13=1   ==> prescaler=16384 (ver datasheet attiny85)
+                       // luego T=1/(f/prescaler)==> 16384/8MHz = 2048us
+                       //2048us*CTC=2048us*244= 500 ms          
+    TIMSK=(1<<OCIE1A); //para habilitar la comparacion Output Compare A Match (vector interrupcion)
+    sei();
+ //end timer test code////////////////////////////////////////////////////////
+ */
 }
-
+/*
+//rutina interrupcion
+ ISR(TIMER1_COMPA_vect){
+ digitalWrite(redLed,!digitalRead(redLed));
+ 
+ }
+ */
 void loop()
 {
 
@@ -210,7 +236,16 @@ void testCommand() {
   } else if (inSignal == extraHEX1) {
     Extra1();
     inSignal = prevSignal;
-  } else if (inSignal == extraHEX5) {
+  } else if (inSignal == extraHEX2) {
+    Extra2();
+    prevSignal = inSignal;
+  }else if (inSignal == extraHEX3) {
+    Extra3();
+    prevSignal = inSignal;
+  }else if (inSignal == extraHEX4) {
+    Extra4();
+    prevSignal = inSignal;
+  }else if (inSignal == extraHEX5) {
     Extra5();
     inSignal = prevSignal;
   } else if (inSignal == offHEX) {
@@ -467,13 +502,49 @@ void Extra1() {
   flashy = true;
 }
 void Extra2() {
-
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      Cyan();
+      ledState = HIGH;
+    } else {
+      Magenta();
+      ledState = LOW;
+    }
+  }
 }
 void Extra3() {
-
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      Magenta();
+      ledState = HIGH;
+    } else {
+      Yellow();
+      ledState = LOW;
+    }
+  }
 }
 void Extra4() {
-
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      Yellow();
+      ledState = HIGH;
+    } else {
+      Cyan();
+      ledState = LOW;
+    }
+  }
 }
 void Extra5() {
   flashy = false;
