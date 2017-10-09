@@ -12,7 +12,7 @@
 
   IRL Receive
 
-  Receives IR signals from different protocols and prints them to the Serial monitor.
+  Receives IR signals from different protocols and prints them to the //Serial monitor.
   Choose your protocols that should be decoded. Remove the not used ones to save flash/ram/speed.
   You can choose a custom debounce time to not trigger a button two times in a row too fast.
 
@@ -110,8 +110,8 @@ uint8_t fadeAWay = 0;
 uint8_t rainbowWay = 0;
 uint8_t plusWay = 0;
 
-long timings[2];//= {5000, 10000};
-uint8_t colours[2];
+long timings[50];// max should be 128, 127 to be safe, or maybe just 100 to keep some memory for other things... ok 50 save size for attiny...
+uint8_t colours[50];
 boolean recording = false;
 long recStartTime = 0;
 long recEndTime = 1000000;
@@ -119,7 +119,8 @@ boolean playing = false;
 
 int eepromTimeAddr = 0; //incr by 4 for long
 int eepromColAddr = 384; // maximum 128 signals if nothing else is saved...
-
+int maxEepromSignalNum = 50; //using only 100 for now for testing
+int runNum = 0;
 void setup()
 {
   //eeprom write test:
@@ -172,19 +173,31 @@ void setup()
       sei();
     //end timer test code////////////////////////////////////////////////////////
   */
-  timings[0] = EEPROMReadlong(0);
-  timings[1] = EEPROMReadlong(4);
-  Serial.print("timings 0 = ");
-  Serial.println(timings[0]);
-  Serial.print("timings 1 = ");
-  Serial.println(timings[1]);
-  colours[0] = EEPROM.read(384);
-  colours[1] = EEPROM.read(385);
-//colours[0] = cyanHEX;
-Serial.print("colours 0 = ");
-  Serial.println(colours[0]);
-  Serial.print("colours 1 = ");
-  Serial.println(colours[1]);
+  for(int i = 0; i < maxEepromSignalNum; i++){
+    timings[i] = EEPROMReadlong(i*4);
+    Serial.print("timings ");
+    Serial.print(i);
+    Serial.print (" = ");
+    Serial.println(timings[i]);
+    colours[i] = EEPROM.read(384+i);
+    Serial.print("colours ");
+    Serial.print(i);
+    Serial.print(" = ");
+    Serial.println(colours[i]);
+  }
+//  timings[0] = EEPROMReadlong(0);
+//  timings[1] = EEPROMReadlong(4);
+//  Serial.print("timings 0 = ");
+//  Serial.println(timings[0]);
+//  Serial.print("timings 1 = ");
+//  Serial.println(timings[1]);
+//  colours[0] = EEPROM.read(384);
+//  colours[1] = EEPROM.read(385);
+////colours[0] = cyanHEX;
+//Serial.print("colours 0 = ");
+//  Serial.println(colours[0]);
+//  Serial.print("colours 1 = ");
+//  Serial.println(colours[1]);
 }
 /*
   //rutina interrupcion
@@ -198,21 +211,50 @@ void loop()
   
   //test:
   if (playing) {
-    long currentMillis = millis()-recStartTime; //reset the clock! At the beginning of play this should be 0!
-    if(currentMillis - previousMillis < timings[0]){
-      //nothing yet
+//    runNum = 1;
+    if(runNum >= maxEepromSignalNum-1){
+      runNum = 0;
     }
-    else if (currentMillis - previousMillis >= timings[0] && currentMillis - previousMillis <= timings[1]) {         //first saved signal
-      //previousMillis = currentMillis;
-      //    inSignal = redHEX;
-//      Serial.println("saved one");
-      inSignal = colours[0];
-    } else { //else if (currentMillis - previousMillis >= recEndTime) {                                              //last saved signal
-      inSignal = colours[1];
-//      inSignal = greenHEX; 
-//      Serial.print(recEndTime);
-//      Serial.println("reached end of recording!");
-    } //just 2 for now
+//    for(int i = 0; i < maxEepromSignalNum-1; i++){ //-1 to play it safe???
+          long currentMillis2 = millis()-recStartTime; //reset the clock! At the beginning of play this should be 0!
+        if(currentMillis2 < timings[runNum]){
+          Serial.print("< ");
+          Serial.println(runNum);
+          //nothing yet
+        }
+        //currently timings[] array must be in time order to work. If the last time is smaller than the previous nothing happens. 
+        else if (currentMillis2 >= timings[runNum] && currentMillis2 <= timings[runNum+1]) {         //saved signal
+          //previousMillis = currentMillis;
+          //    inSignal = redHEX;
+          Serial.print("== ");
+          Serial.println(runNum);
+          inSignal = colours[runNum];
+        } else { //else if (currentMillis - previousMillis >= recEndTime) {                                              //last saved signal
+          Serial.print("> ");
+          Serial.println(runNum);
+          //inSignal = colours[1];
+    //      inSignal = greenHEX; 
+    //      Serial.print(recEndTime);
+    //      Serial.println("reached end of recording!");
+        } //just 2 for now
+//    }
+//    long currentMillis = millis()-recStartTime; //reset the clock! At the beginning of play this should be 0!
+//    if(currentMillis - previousMillis < timings[0]){
+//      //nothing yet
+//    }
+//    else if (currentMillis - previousMillis >= timings[0] && currentMillis - previousMillis <= timings[1]) {         //first saved signal
+//      //previousMillis = currentMillis;
+//      //    inSignal = redHEX;
+////      Serial.println("saved one");
+//      inSignal = colours[0];
+//    } else { //else if (currentMillis - previousMillis >= recEndTime) {                                              //last saved signal
+//      inSignal = colours[1];
+////      inSignal = greenHEX; 
+////      Serial.print(recEndTime);
+////      Serial.println("reached end of recording!");
+//    } //just 2 for now
+
+runNum++;
   }
 
   // Check if we are currently receiving data
@@ -237,9 +279,13 @@ void loop()
         EEPROM.write(eepromColAddr, inSignal); //and save in Array too? 
         Serial.print(" Signal: ");
         Serial.println(inSignal);
-        recording = false; //only one signal at a time
+//        recording = false; //only one signal at a time
         eepromTimeAddr+=4;
         eepromColAddr++; //on to the next colour
+        if(eepromColAddr > 500){ //too much go back
+          eepromTimeAddr = 0;
+          eepromColAddr = 384; //should be 400? or not??? 
+        }
       }
     }
   }
