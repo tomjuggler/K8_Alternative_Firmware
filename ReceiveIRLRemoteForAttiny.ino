@@ -130,8 +130,8 @@ void setup()
   pinMode(blueLed, OUTPUT);
   pinMode(greenLed, OUTPUT);
   pinMode(redLed, OUTPUT);
-  Serial.begin(115200); //Serial conflicts with Pin1 - Green I think!
-  Serial.println("Startup");
+//  Serial.begin(115200); //Serial conflicts with Pin1 - Green I think!
+//  Serial.println("Startup");
 
   Red();
   delay(500);
@@ -175,15 +175,15 @@ void setup()
   */
   for(int i = 0; i < maxEepromSignalNum; i++){
     timings[i] = EEPROMReadlong(i*4);
-    Serial.print("timings ");
-    Serial.print(i);
-    Serial.print (" = ");
-    Serial.println(timings[i]);
+//    Serial.print("timings ");
+//    Serial.print(i);
+//    Serial.print (" = ");
+//    Serial.println(timings[i]);
     colours[i] = EEPROM.read(384+i);
-    Serial.print("colours ");
-    Serial.print(i);
-    Serial.print(" = ");
-    Serial.println(colours[i]);
+//    Serial.print("colours ");
+//    Serial.print(i);
+//    Serial.print(" = ");
+//    Serial.println(colours[i]);
   }
 //  timings[0] = EEPROMReadlong(0);
 //  timings[1] = EEPROMReadlong(4);
@@ -211,57 +211,25 @@ void loop()
   
   //test:
   if (playing) {
-//    runNum = 1;
     if(runNum >= maxEepromSignalNum-1){
       runNum = 0;
     }
-//    for(int i = 0; i < maxEepromSignalNum-1; i++){ //-1 to play it safe???
           long currentMillis2 = millis()-recStartTime; //reset the clock! At the beginning of play this should be 0!
         if(currentMillis2 < timings[runNum]){
-          Serial.print("< ");
-          Serial.println(runNum);
-          //nothing yet
+//          Serial.print("< ");
+//          Serial.println(runNum);
         }
-        //currently timings[] array must be in time order to work. If the last time is smaller than the previous nothing happens. 
+//   I think currently timings[] array must be in time order to work. If the last time is smaller than the previous nothing happens. 
         else if (currentMillis2 >= timings[runNum] && currentMillis2 <= timings[runNum+1]) {         //saved signal
-          //previousMillis = currentMillis;
-          //    inSignal = redHEX;
-          Serial.print("== ");
-          Serial.println(runNum);
+//          Serial.print("== ");
+//          Serial.println(runNum);
           inSignal = colours[runNum];
-        } else { //else if (currentMillis - previousMillis >= recEndTime) {                                              //last saved signal
-          Serial.print("> ");
-          Serial.println(runNum);
-          //inSignal = colours[1];
-    //      inSignal = greenHEX; 
-    //      Serial.print(recEndTime);
-    //      Serial.println("reached end of recording!");
-        } //just 2 for now
-//    }
-//    long currentMillis = millis()-recStartTime; //reset the clock! At the beginning of play this should be 0!
-//    if(currentMillis - previousMillis < timings[0]){
-//      //nothing yet
-//    }
-//    else if (currentMillis - previousMillis >= timings[0] && currentMillis - previousMillis <= timings[1]) {         //first saved signal
-//      //previousMillis = currentMillis;
-//      //    inSignal = redHEX;
-////      Serial.println("saved one");
-//      inSignal = colours[0];
-//    } else { //else if (currentMillis - previousMillis >= recEndTime) {                                              //last saved signal
-//      inSignal = colours[1];
-////      inSignal = greenHEX; 
-////      Serial.print(recEndTime);
-////      Serial.println("reached end of recording!");
-//    } //just 2 for now
-
-runNum++;
+        } else { 
+//          Serial.print("> ");
+//          Serial.println(runNum);
+        } 
+ runNum++;
   }
-
-  // Check if we are currently receiving data
-  //if (!IRLremote.receiving()) {
-  // Run code that disables interrupts, such as some led strips
-  //}
-  //get previous signal for memory:
 
   // Check if new IR protocol data is available
 
@@ -273,13 +241,13 @@ runNum++;
       inSignal = data.command;
       if (recording) { //recording activated by pressing 
         //eeprom write test:
+// Note: need to record strobing/not strobing information as well as strobe speed here too. 
         EEPROMWritelong(eepromTimeAddr, millis()-recStartTime); //save this in Array for immediate playback/testing? 
-        Serial.print("saved time: "); 
-        Serial.print(millis()-recStartTime);
+//        Serial.print("saved time: "); 
+//        Serial.print(millis()-recStartTime);
         EEPROM.write(eepromColAddr, inSignal); //and save in Array too? 
-        Serial.print(" Signal: ");
-        Serial.println(inSignal);
-//        recording = false; //only one signal at a time
+//        Serial.print(" Signal: ");
+//        Serial.println(inSignal);
         eepromTimeAddr+=4;
         eepromColAddr++; //on to the next colour
         if(eepromColAddr > 500){ //too much go back
