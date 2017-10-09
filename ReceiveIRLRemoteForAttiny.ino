@@ -1,10 +1,10 @@
 /*
- * LED code by Tom Hastings
- * upgrading k8 juggling clubs internal code
- * run on attiny85 @8mhz internal clock
- * led's switched via transistors
- *
- */
+   LED code by Tom Hastings
+   upgrading k8 juggling clubs internal code
+   run on attiny85 @8mhz internal clock
+   led's switched via transistors
+
+*/
 
 /*
   Copyright (c) 2014-2015 NicoHood
@@ -59,7 +59,7 @@ boolean ready = false;
 //these are the exact same pins as K8:
 //1, 3, 4
 //only difference is (maybe) the colours!!!!!
-int blueLed = 1; //on right
+int blueLed = 5; //changed to avoid Serial conflict
 int greenLed = 3; //middle
 int redLed = 4; //left
 int delayTime = 25;
@@ -93,7 +93,7 @@ static uint8_t extraHEX3 = 0x10;
 static uint8_t extraHEX4 = 0x12;
 static uint8_t extraHEX5 = 0x13;
 
-unsigned long previousMillis = 0;        // will store last time LED was updated
+long previousMillis = 0;        // will store last time LED was updated
 
 // constants won't change:
 long interval = 125;           // interval at which to blink (milliseconds)
@@ -110,63 +110,137 @@ uint8_t fadeAWay = 0;
 uint8_t rainbowWay = 0;
 uint8_t plusWay = 0;
 
+long timings[2];//= {5000, 10000};
+uint8_t colours[2];
+boolean recording = false;
+long recStartTime = 0;
+long recEndTime = 1000000;
+boolean playing = false;
+
+int eepromTimeAddr = 0; //incr by 4 for long
+int eepromColAddr = 384; // maximum 128 signals if nothing else is saved...
+
 void setup()
 {
+  //eeprom write test:
+  //EEPROMWritelong(0, 5000);
+  //EEPROMWritelong(4, 10000);
+//  EEPROM.write(20, yellowHEX);
   pinMode(blueLed, OUTPUT);
   pinMode(greenLed, OUTPUT);
   pinMode(redLed, OUTPUT);
-  //  Serial.begin(115200);
-  //  Serial.println(F("Startup"));
+  Serial.begin(115200); //Serial conflicts with Pin1 - Green I think!
+  Serial.println("Startup");
 
+  Red();
+  delay(500);
+  Green();
+  delay(500);
   Blue();
-//   Start reading the remote. PinInterrupt or PinChangeInterrupt* will automatically be selected
+  delay(500);
+
+
+  /*
+    long timeDelay1 = timings[0];
+    delay(timeDelay1);
+    Red();
+    long timeDelay2 = timings[1];
+    delay(timeDelay2);
+    Green();
+  */
+
+  //   Start reading the remote. PinInterrupt or PinChangeInterrupt* will automatically be selected
   if (!IRLremote.begin(pinIR)) {
   }
-/*
- //seems that timer is not working, too much conflict
-//timer test Attiny: //////////////////////////////////////////////////////////
-  cli();
-    TCCR1=0;
-    TCNT1 = 0;                  //zero the timer
-    GTCCR = _BV(PSR1);          //reset the prescaler
-    OCR1A=243;           //contador CTC, tiene un tamaño de 2^8-1=255
-    OCR1C=243;              
-    TCCR1 |= (1<<CTC1);  //el analogo a WGM12 en los atmega
-    TCCR1 |= (1<<CS10);//
-    TCCR1 |= (1<<CS11);//
-    TCCR1 |= (1<<CS12);
-    TCCR1 |= (1<<CS13);//   CS10=1, CS11=1, CS12=1, CS13=1   ==> prescaler=16384 (ver datasheet attiny85)
-                       // luego T=1/(f/prescaler)==> 16384/8MHz = 2048us
-                       //2048us*CTC=2048us*244= 500 ms          
-    TIMSK=(1<<OCIE1A); //para habilitar la comparacion Output Compare A Match (vector interrupcion)
-    sei();
- //end timer test code////////////////////////////////////////////////////////
- */
+  /*
+    //seems that timer is not working, too much conflict
+    //timer test Attiny: //////////////////////////////////////////////////////////
+    cli();
+      TCCR1=0;
+      TCNT1 = 0;                  //zero the timer
+      GTCCR = _BV(PSR1);          //reset the prescaler
+      OCR1A=243;           //contador CTC, tiene un tamaño de 2^8-1=255
+      OCR1C=243;
+      TCCR1 |= (1<<CTC1);  //el analogo a WGM12 en los atmega
+      TCCR1 |= (1<<CS10);//
+      TCCR1 |= (1<<CS11);//
+      TCCR1 |= (1<<CS12);
+      TCCR1 |= (1<<CS13);//   CS10=1, CS11=1, CS12=1, CS13=1   ==> prescaler=16384 (ver datasheet attiny85)
+                         // luego T=1/(f/prescaler)==> 16384/8MHz = 2048us
+                         //2048us*CTC=2048us*244= 500 ms
+      TIMSK=(1<<OCIE1A); //para habilitar la comparacion Output Compare A Match (vector interrupcion)
+      sei();
+    //end timer test code////////////////////////////////////////////////////////
+  */
+  timings[0] = EEPROMReadlong(0);
+  timings[1] = EEPROMReadlong(4);
+  Serial.print("timings 0 = ");
+  Serial.println(timings[0]);
+  Serial.print("timings 1 = ");
+  Serial.println(timings[1]);
+  colours[0] = EEPROM.read(384);
+  colours[1] = EEPROM.read(385);
+//colours[0] = cyanHEX;
+Serial.print("colours 0 = ");
+  Serial.println(colours[0]);
+  Serial.print("colours 1 = ");
+  Serial.println(colours[1]);
 }
 /*
-//rutina interrupcion
- ISR(TIMER1_COMPA_vect){
- digitalWrite(redLed,!digitalRead(redLed));
- 
- }
- */
+  //rutina interrupcion
+  ISR(TIMER1_COMPA_vect){
+  digitalWrite(redLed,!digitalRead(redLed));
+
+  }
+*/
 void loop()
 {
+  
+  //test:
+  if (playing) {
+    long currentMillis = millis()-recStartTime; //reset the clock! At the beginning of play this should be 0!
+    if(currentMillis - previousMillis < timings[0]){
+      //nothing yet
+    }
+    else if (currentMillis - previousMillis >= timings[0] && currentMillis - previousMillis <= timings[1]) {         //first saved signal
+      //previousMillis = currentMillis;
+      //    inSignal = redHEX;
+//      Serial.println("saved one");
+      inSignal = colours[0];
+    } else { //else if (currentMillis - previousMillis >= recEndTime) {                                              //last saved signal
+      inSignal = colours[1];
+//      inSignal = greenHEX; 
+//      Serial.print(recEndTime);
+//      Serial.println("reached end of recording!");
+    } //just 2 for now
+  }
 
   // Check if we are currently receiving data
   //if (!IRLremote.receiving()) {
   // Run code that disables interrupts, such as some led strips
   //}
-//get previous signal for memory:
+  //get previous signal for memory:
 
   // Check if new IR protocol data is available
- 
+
   if (IRLremote.available()) {
     auto data = IRLremote.read();
     if (data.command == 0x0) {
-
+      //inbetween signal do nothing...
     } else {
-     inSignal = data.command;
+      inSignal = data.command;
+      if (recording) { //recording activated by pressing 
+        //eeprom write test:
+        EEPROMWritelong(eepromTimeAddr, millis()-recStartTime); //save this in Array for immediate playback/testing? 
+        Serial.print("saved time: "); 
+        Serial.print(millis()-recStartTime);
+        EEPROM.write(eepromColAddr, inSignal); //and save in Array too? 
+        Serial.print(" Signal: ");
+        Serial.println(inSignal);
+        recording = false; //only one signal at a time
+        eepromTimeAddr+=4;
+        eepromColAddr++; //on to the next colour
+      }
     }
   }
 
@@ -223,14 +297,14 @@ void testCommand() {
     flashy = false; //not working in flashy mode
     BGStrobe();
     prevSignal = inSignal;
-  }else if (inSignal == GRStrobeHEX) {
+  } else if (inSignal == GRStrobeHEX) {
     flashy = false; //not working in flashy mode
     GRStrobe();
     prevSignal = inSignal;
   } else if (inSignal == nextHEX) {
     Next();
     inSignal = prevSignal; //now switch to whatever we were doing before .. need to test for non-colour signals here though...
-  }else if (inSignal == previousHEX) {
+  } else if (inSignal == previousHEX) {
     Previous();
     inSignal = prevSignal;
   } else if (inSignal == extraHEX1) {
@@ -239,19 +313,28 @@ void testCommand() {
   } else if (inSignal == extraHEX2) {
     Extra2();
     prevSignal = inSignal;
-  }else if (inSignal == extraHEX3) {
+  } else if (inSignal == extraHEX3) {
     Extra3();
     prevSignal = inSignal;
-  }else if (inSignal == extraHEX4) {
+  } else if (inSignal == extraHEX4) {
     Extra4();
     prevSignal = inSignal;
-  }else if (inSignal == extraHEX5) {
+  } else if (inSignal == extraHEX5) {
     Extra5();
     inSignal = prevSignal;
-  } else if (inSignal == offHEX) {
-    Off();    
-  } else if (inSignal == onHEX) {
-    inSignal = prevSignal;   
+  } else if (inSignal == offHEX) { //start playing back recording
+    recStartTime = millis();
+    recording = false;
+    playing = true;
+//    inSignal = offHEX;
+    inSignal = prevSignal; //hmmm what does this actually do?
+//    recEndTime = millis();
+//    recording = false;
+    Off();
+  } else if (inSignal == onHEX) { //start recording
+    inSignal = prevSignal;
+    recStartTime = millis();
+    recording = true;
   }
 
 
@@ -276,108 +359,108 @@ void flash() {
 //0a
 void Red() {
   //  flashy = false; //test
-//  Off(); //this is having some sort of adversarial effect, too many concurrent digital writes to the same pin???
+  //  Off(); //this is having some sort of adversarial effect, too many concurrent digital writes to the same pin???
   digitalWrite(redLed, HIGH);
   digitalWrite(blueLed, LOW);
   digitalWrite(greenLed, LOW);
 }
 //1b green
 void Green() {
-//  Off();
+  //  Off();
   digitalWrite(greenLed, HIGH);
   digitalWrite(blueLed, LOW);
   digitalWrite(redLed, LOW);
 }
 //2c blue
 void Blue() {
-//  Off();
+  //  Off();
   digitalWrite(blueLed, HIGH);
   digitalWrite(redLed, LOW);
   digitalWrite(greenLed, LOW);
 }
 //3d Yellow
 void Yellow() {
-//  Off();
+  //  Off();
   digitalWrite(greenLed, HIGH);
   digitalWrite(redLed, HIGH);
   digitalWrite(blueLed, LOW);
 }
 //4e Cyan
 void Cyan() {
-//  Off();
+  //  Off();
   digitalWrite(blueLed, HIGH);
   digitalWrite(greenLed, HIGH);
   digitalWrite(redLed, LOW);
 }
 //5f Magenta
 void Magenta() {
-//  Off();
+  //  Off();
   digitalWrite(blueLed, HIGH);
   digitalWrite(redLed, HIGH);
   digitalWrite(greenLed, LOW);
 }
 //6g White
 void White() {
-//  Off();
+  //  Off();
   digitalWrite(blueLed, HIGH);
   digitalWrite(greenLed, HIGH);
   digitalWrite(redLed, HIGH);
 }
 //7h Fade
 void Fade() {
-  //after some testing, on attiny85 Red and Blue pins support pwm but green does not. Need another solution for fading: 
-  
-  for(int i = 1; i < 1000; i++){
+  //after some testing, on attiny85 Red and Blue pins support pwm but green does not. Need another solution for fading:
+
+  for (int i = 1; i < 1000; i++) {
     digitalWrite(blueLed, HIGH);
     delayMicroseconds(i);
     digitalWrite(blueLed, LOW);
     delayMicroseconds(1000 - i);
-    
-//    digitalWrite(greenLed, HIGH);
-//    delayMicroseconds(i);
-//    digitalWrite(greenLed, LOW);
-//    delayMicroseconds(1000 - i);
-//
+
+    //    digitalWrite(greenLed, HIGH);
+    //    delayMicroseconds(i);
+    //    digitalWrite(greenLed, LOW);
+    //    delayMicroseconds(1000 - i);
+    //
     digitalWrite(redLed, LOW);
     delayMicroseconds(i);
     digitalWrite(redLed, HIGH);
     delayMicroseconds(1000 - i);
   }
-  for(int i = 1000; i > 0; i--){
+  for (int i = 1000; i > 0; i--) {
     digitalWrite(blueLed, HIGH);
     delayMicroseconds(i);
     digitalWrite(blueLed, LOW);
     delayMicroseconds(1000 - i);
-    
-//    digitalWrite(greenLed, HIGH);
-//    delayMicroseconds(i);
-//    digitalWrite(greenLed, LOW);
-//    delayMicroseconds(1000 - i);
-//
+
+    //    digitalWrite(greenLed, HIGH);
+    //    delayMicroseconds(i);
+    //    digitalWrite(greenLed, LOW);
+    //    delayMicroseconds(1000 - i);
+    //
     digitalWrite(redLed, LOW);
     delayMicroseconds(i);
     digitalWrite(redLed, HIGH);
     delayMicroseconds(1000 - i);
   }
-  
-  }
+
+}
 //8i Strobe+
 void Strobeplus() {
   interval = 2;
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    if (plusWay==0) {
+    if (plusWay == 0) {
       Red();
-    } else if(plusWay==1) {
+    } else if (plusWay == 1) {
       Off();
-    } else if(plusWay==2) {
+    } else if (plusWay == 2) {
       Blue();
-    } else if(plusWay==3) {
+    } else if (plusWay == 3) {
       Off();
-    } 
+    }
     plusWay++;
-    if(plusWay>3){
+    if (plusWay > 3) {
       plusWay = 0;
     }
   }
@@ -387,15 +470,15 @@ void RGBStrobe() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    if (threeWay==0) {
+    if (threeWay == 0) {
       Red();
-    } else if(threeWay==1) {
+    } else if (threeWay == 1) {
       Green();
-    } else if(threeWay==2) {
+    } else if (threeWay == 2) {
       Blue();
-    } 
+    }
     threeWay++;
-    if(threeWay>2){
+    if (threeWay > 2) {
       threeWay = 0;
     }
   }
@@ -405,21 +488,21 @@ void Rainbow() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    if (rainbowWay==0) {
+    if (rainbowWay == 0) {
       Red();
-    } else if(rainbowWay==1) {
+    } else if (rainbowWay == 1) {
       Green();
-    } else if(rainbowWay==2) {
+    } else if (rainbowWay == 2) {
       Blue();
-    } else if(rainbowWay==3) {
+    } else if (rainbowWay == 3) {
       Cyan();
-    } else if(rainbowWay==4) {
+    } else if (rainbowWay == 4) {
       Yellow();
-    } else if(rainbowWay==5) {
+    } else if (rainbowWay == 5) {
       Magenta();
-    } 
+    }
     rainbowWay++;
-    if(rainbowWay>5){
+    if (rainbowWay > 5) {
       rainbowWay = 0;
     }
   }
@@ -442,7 +525,7 @@ void Halfstrobe() {
 }
 //12m BGStrobe
 void BGStrobe() {
- unsigned long currentMillis = millis();
+  unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     // save the last time you blinked the LED
     previousMillis = currentMillis;
@@ -458,7 +541,7 @@ void BGStrobe() {
 }
 //13n GRStrobe
 void GRStrobe() {
- unsigned long currentMillis = millis();
+  unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     // save the last time you blinked the LED
     previousMillis = currentMillis;
@@ -478,22 +561,25 @@ void Off() {
   digitalWrite(blueLed, LOW);
   digitalWrite(redLed, LOW);
 }
+void On() {
+  recording = true;
+}
 //15p Next
 void Next() {
-interval-=20;
-  if(interval < 5){
+  interval -= 20;
+  if (interval < 5) {
     interval = 5;
   }
 }
 //16q Demo
 void Demo() {
-Off();
+  Off();
 
 }
 //17r Previous
 void Previous() {
-  interval+=20;
-  if(interval > 500){
+  interval += 20;
+  if (interval > 500) {
     interval = 500;
   }
 }
@@ -552,6 +638,37 @@ void Extra5() {
 
 
 
+//This function will write a 4 byte (32bit) long to the eeprom at
+//the specified address to address + 3.
+void EEPROMWritelong(int address, long value)
+{
+  //Decomposition from a long to 4 bytes by using bitshift.
+  //One = Most significant -> Four = Least significant byte
+  byte four = (value & 0xFF);
+  byte three = ((value >> 8) & 0xFF);
+  byte two = ((value >> 16) & 0xFF);
+  byte one = ((value >> 24) & 0xFF);
+
+  //Write the 4 bytes into the eeprom memory.
+  EEPROM.write(address, four);
+  EEPROM.write(address + 1, three);
+  EEPROM.write(address + 2, two);
+  EEPROM.write(address + 3, one);
+}
+
+//This function will return a 4 byte (32bit) long from the eeprom
+//at the specified address to address + 3.
+long EEPROMReadlong(long address)
+{
+  //Read the 4 bytes from the eeprom memory.
+  long four = EEPROM.read(address);
+  long three = EEPROM.read(address + 1);
+  long two = EEPROM.read(address + 2);
+  long one = EEPROM.read(address + 3);
+
+  //Return the recomposed long by using bitshift.
+  return ((four << 0) & 0xFF) + ((three << 8) & 0xFFFF) + ((two << 16) & 0xFFFFFF) + ((one << 24) & 0xFFFFFFFF);
+}
 
 
 
