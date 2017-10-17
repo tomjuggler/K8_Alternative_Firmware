@@ -205,6 +205,7 @@ int runNum = 0;
 
 int strobePlusOptions = 0;
 int strobePlusOptionsMax = 5;
+
 void setup()
 {
   //eeprom write test:
@@ -285,7 +286,7 @@ void loop()
       //inbetween signal do nothing...
     } else {
       inSignal = data.command;
-      if (recording) { //recording activated by pressing 
+      if (recording) { //recording activated by pressing 'ON' button
         //eeprom write test:
 // Note: need to record strobing/not strobing information as well as strobe speed here too. or just press strobe button...buggy though
         EEPROMWritelong(eepromTimeAddr, millis()-recStartTime); //save this in Array for immediate playback/testing? 
@@ -297,8 +298,8 @@ void loop()
         eepromTimeAddr+=4;
         eepromColAddr++; //on to the next colour
         if(eepromColAddr > 500){ //too much go back
-          eepromTimeAddr = 0;
-          eepromColAddr = 384; //should be 400? or not??? 
+          eepromTimeAddr = 124; //last one again
+          eepromColAddr = 496; //last one again
         }
       }
     }
@@ -383,31 +384,38 @@ void testCommand() {
     prevSignal = inSignal;
   } else if (inSignal == fadeHEX) {
     flashy = false; //not working in flashy mode
+    flashThreeWay = false;
     Fade();
     prevSignal = inSignal;
   } else if (inSignal == strobeplusHEX) {
     interval = 2;
     flashy = false; //not working in flashy mode
+    flashThreeWay = false;
     Strobeplus();
     //prevSignal = inSignal;
   } else if (inSignal == RGBStrobeHEX) {
     flashy = false; //not working in flashy mode
+    flashThreeWay = false;
     RGBStrobe();
     prevSignal = inSignal;
   } else if (inSignal == rainbowHEX) {
     flashy = false; //not working in flashy mode
+    flashThreeWay = false;
     Rainbow();
     prevSignal = inSignal;
   } else if (inSignal == halfstrobeHEX) {
     flashy = false; //not working in flashy mode
+    flashThreeWay = false;
     Halfstrobe();
     prevSignal = inSignal;
   } else if (inSignal == BGStrobeHEX) {
     flashy = false; //not working in flashy mode
+    flashThreeWay = false;
     BGStrobe();
     prevSignal = inSignal;
   } else if (inSignal == GRStrobeHEX) {
     flashy = false; //not working in flashy mode
+    flashThreeWay = false;
     GRStrobe();
     prevSignal = inSignal;
   } else if (inSignal == nextHEX) {
@@ -420,12 +428,18 @@ void testCommand() {
     Extra1();
     inSignal = prevSignal;
   } else if (inSignal == extraHEX2) {
+    flashy = false;
+    flashThreeWay = false;
     Extra2();
     prevSignal = inSignal;
   } else if (inSignal == extraHEX3) {
+    flashy = false;
+    flashThreeWay = false;
     Extra3();
     prevSignal = inSignal;
   } else if (inSignal == extraHEX4) {
+    flashy = false;
+    flashThreeWay = false;
     Extra4();
     prevSignal = inSignal;
   } else if (inSignal == extraHEX5) {
