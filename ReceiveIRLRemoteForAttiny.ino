@@ -7,6 +7,84 @@
 */
 
 /*
+ * list of signals: 
+
+Red:
+  Red
+
+Green:
+  Green
+
+Blue:
+  Blue
+
+Yellow:
+  Yellow
+
+Cyan:
+  Cyan
+
+Magenta: 
+  Magenta
+
+White:
+  White
+
+Fade:
+  Fade some colours (incomplete)
+
+Strobeplus: 
+  Blue - Off - Red - Off (strobing)
+
+RGBStrobe: 
+  RGB
+
+Rainbow: 
+  RGBCYM
+
+Halfstrobe: 
+  Blue - Red
+
+BGStrobe: 
+  Blue - Green
+
+GRStrobe: 
+  Green - Red
+
+On:
+  start recording
+
+Off:
+  start playback
+
+Previous:
+  Strobe speed --
+
+Next:
+  Strobe speed ++
+
+Demo:
+  ...............
+  
+
+Extra1:
+  Strobing On/Off
+
+Extra2:
+  Cyan - Magenta
+
+Extra3:
+  Yellow - Magenta
+
+Extra4:
+  Yellow - Cyan
+
+Extra5:
+  Off
+
+ */
+
+/*
   Copyright (c) 2014-2015 NicoHood
   See the readme for credit to other people.
 
@@ -104,6 +182,9 @@ boolean flashy = false;
 //volatile uint8_t sendSignal = 0x9; //for normal
 volatile uint8_t inSignal = 0xA; //for both
 volatile uint8_t prevSignal = 0xA; //for memory
+volatile uint8_t oneSignal = 0xA; //for flashy3Way
+volatile uint8_t twoSignal = 0xA; //for flashy3Way
+boolean flashThreeWay = false;
 
 uint8_t threeWay = 0;
 uint8_t fadeAWay = 0;
@@ -121,6 +202,9 @@ int eepromTimeAddr = 0; //incr by 4 for long
 int eepromColAddr = 384; // maximum 128 signals if nothing else is saved...
 int maxEepromSignalNum = 50; //using only 100 for now for testing
 int runNum = 0;
+
+int strobePlusOptions = 0;
+int strobePlusOptionsMax = 5;
 void setup()
 {
   //eeprom write test:
@@ -130,8 +214,8 @@ void setup()
   pinMode(blueLed, OUTPUT);
   pinMode(greenLed, OUTPUT);
   pinMode(redLed, OUTPUT);
-//  Serial.begin(115200); //Serial conflicts with Pin1 - Green I think!
-//  Serial.println("Startup");
+  //Serial.begin(115200); //Serial conflicts with Pin1 - Green I think!
+  //Serial.println("Startup");
 
   Red();
   delay(500);
@@ -139,7 +223,7 @@ void setup()
   delay(500);
   Blue();
   delay(500);
-
+  
 
   /*
     long timeDelay1 = timings[0];
@@ -153,59 +237,21 @@ void setup()
   //   Start reading the remote. PinInterrupt or PinChangeInterrupt* will automatically be selected
   if (!IRLremote.begin(pinIR)) {
   }
-  /*
-    //seems that timer is not working, too much conflict
-    //timer test Attiny: //////////////////////////////////////////////////////////
-    cli();
-      TCCR1=0;
-      TCNT1 = 0;                  //zero the timer
-      GTCCR = _BV(PSR1);          //reset the prescaler
-      OCR1A=243;           //contador CTC, tiene un tamaño de 2^8-1=255
-      OCR1C=243;
-      TCCR1 |= (1<<CTC1);  //el analogo a WGM12 en los atmega
-      TCCR1 |= (1<<CS10);//
-      TCCR1 |= (1<<CS11);//
-      TCCR1 |= (1<<CS12);
-      TCCR1 |= (1<<CS13);//   CS10=1, CS11=1, CS12=1, CS13=1   ==> prescaler=16384 (ver datasheet attiny85)
-                         // luego T=1/(f/prescaler)==> 16384/8MHz = 2048us
-                         //2048us*CTC=2048us*244= 500 ms
-      TIMSK=(1<<OCIE1A); //para habilitar la comparacion Output Compare A Match (vector interrupcion)
-      sei();
-    //end timer test code////////////////////////////////////////////////////////
-  */
+ 
   for(int i = 0; i < maxEepromSignalNum; i++){
     timings[i] = EEPROMReadlong(i*4);
-//    Serial.print("timings ");
-//    Serial.print(i);
-//    Serial.print (" = ");
-//    Serial.println(timings[i]);
+    //Serial.print("timings ");
+    //Serial.print(i);
+    //Serial.print (" = ");
+    //Serial.println(timings[i]);
     colours[i] = EEPROM.read(384+i);
-//    Serial.print("colours ");
-//    Serial.print(i);
-//    Serial.print(" = ");
-//    Serial.println(colours[i]);
+    //Serial.print("colours ");
+    //Serial.print(i);
+    //Serial.print(" = ");
+    //Serial.println(colours[i]);
   }
-//  timings[0] = EEPROMReadlong(0);
-//  timings[1] = EEPROMReadlong(4);
-//  Serial.print("timings 0 = ");
-//  Serial.println(timings[0]);
-//  Serial.print("timings 1 = ");
-//  Serial.println(timings[1]);
-//  colours[0] = EEPROM.read(384);
-//  colours[1] = EEPROM.read(385);
-////colours[0] = cyanHEX;
-//Serial.print("colours 0 = ");
-//  Serial.println(colours[0]);
-//  Serial.print("colours 1 = ");
-//  Serial.println(colours[1]);
 }
-/*
-  //rutina interrupcion
-  ISR(TIMER1_COMPA_vect){
-  digitalWrite(redLed,!digitalRead(redLed));
 
-  }
-*/
 void loop()
 {
   
@@ -231,7 +277,7 @@ void loop()
  runNum++;
   }
 
-  // Check if new IR protocol data is available
+  // Check if new IR protocol data is available:
 
   if (IRLremote.available()) {
     auto data = IRLremote.read();
@@ -241,7 +287,7 @@ void loop()
       inSignal = data.command;
       if (recording) { //recording activated by pressing 
         //eeprom write test:
-// Note: need to record strobing/not strobing information as well as strobe speed here too. 
+// Note: need to record strobing/not strobing information as well as strobe speed here too. or just press strobe button...buggy though
         EEPROMWritelong(eepromTimeAddr, millis()-recStartTime); //save this in Array for immediate playback/testing? 
 //        Serial.print("saved time: "); 
 //        Serial.print(millis()-recStartTime);
@@ -257,11 +303,59 @@ void loop()
       }
     }
   }
-
+  if(flashThreeWay){
+    flash3Way();
+  }
+  
   if (flashy) {
     flash();
   } else {
     testCommand();
+  }
+}
+
+void flash() {
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      Off();
+      ledState = HIGH;
+    } else {
+      testCommand();
+      ledState = LOW;
+    }
+  }
+}
+
+void flash3Way() {
+//  interval = 2;
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    if (plusWay == 0) {
+//      inSignal = offHEX;
+      inSignal = oneSignal;
+      testCommand();
+    } else if (plusWay == 1) {
+//      Off();
+      inSignal = extraHEX5; //off signal
+      testCommand();
+    } else if (plusWay == 2) {
+//      inSignal = extraHEX5;
+      inSignal = twoSignal;
+      testCommand();
+    } else if (plusWay == 3) {
+//      Off();
+      inSignal = extraHEX5; //off signal
+      testCommand();
+    }
+    plusWay++;
+    if (plusWay > 3) {
+      plusWay = 0;
+    }
   }
 }
 
@@ -292,9 +386,10 @@ void testCommand() {
     Fade();
     prevSignal = inSignal;
   } else if (inSignal == strobeplusHEX) {
+    interval = 2;
     flashy = false; //not working in flashy mode
     Strobeplus();
-    prevSignal = inSignal;
+    //prevSignal = inSignal;
   } else if (inSignal == RGBStrobeHEX) {
     flashy = false; //not working in flashy mode
     RGBStrobe();
@@ -335,8 +430,10 @@ void testCommand() {
     prevSignal = inSignal;
   } else if (inSignal == extraHEX5) {
     Extra5();
-    inSignal = prevSignal;
+    flashy = false;
+    prevSignal = inSignal;
   } else if (inSignal == offHEX) { //start playing back recording
+    runNum = 0; //reset to start again
     recStartTime = millis();
     recording = false;
     playing = true;
@@ -348,28 +445,14 @@ void testCommand() {
   } else if (inSignal == onHEX) { //start recording
     inSignal = prevSignal;
     recStartTime = millis();
+    playing = false;
     recording = true;
   }
 
 
 }
 
-void flash() {
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval) {
-    // save the last time you blinked the LED
-    previousMillis = currentMillis;
-    // if the LED is off turn it on and vice-versa:
-    if (ledState == LOW) {
-      Off();
-      ledState = HIGH;
-    } else {
-      testCommand();
-      ledState = LOW;
-    }
-  }
 
-}
 //0a
 void Red() {
   //  flashy = false; //test
@@ -460,24 +543,40 @@ void Fade() {
 }
 //8i Strobe+
 void Strobeplus() {
-  interval = 2;
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-    if (plusWay == 0) {
-      Red();
-    } else if (plusWay == 1) {
-      Off();
-    } else if (plusWay == 2) {
-      Blue();
-    } else if (plusWay == 3) {
-      Off();
-    }
-    plusWay++;
-    if (plusWay > 3) {
-      plusWay = 0;
-    }
+  switch(strobePlusOptions){
+    case 0:
+      oneSignal = redHEX;
+      twoSignal = blueHEX;
+    break;
+    case 1:
+      oneSignal = blueHEX;
+      twoSignal = greenHEX;
+    break;
+    case 2:
+      oneSignal = greenHEX;
+      twoSignal = redHEX;
+    break;
+    case 3:
+      oneSignal = cyanHEX;
+      twoSignal = magentaHEX;
+    break;
+    case 4:
+      oneSignal = magentaHEX;
+      twoSignal = yellowHEX;
+    break;
+    case 5:
+      oneSignal = yellowHEX;
+      twoSignal = cyanHEX;
+    break;
+    default:
+      //nothing
+    break;
   }
+  strobePlusOptions++;
+  if(strobePlusOptions > strobePlusOptionsMax){
+    strobePlusOptions = 0;
+  }
+  flashThreeWay = true;
 }
 //9j RGBStrobe
 void RGBStrobe() {
@@ -599,7 +698,7 @@ void Previous() {
 }
 
 void Extra1() {
-  flashy = true;
+  flashy = !flashy; //toggle strobing
 }
 void Extra2() {
   unsigned long currentMillis = millis();
@@ -647,7 +746,7 @@ void Extra4() {
   }
 }
 void Extra5() {
-  flashy = false;
+  Off();
 }
 
 
