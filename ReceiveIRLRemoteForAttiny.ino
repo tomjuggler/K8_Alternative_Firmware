@@ -116,7 +116,7 @@ Extra5:
 //#define digitalPinToInterrupt(p) ((p) == 2 ? 0 : ((p) == 3 ? 1 : NOT_AN_INTERRUPT))
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// include PinChangeInterrupt library* BEFORE IRLremote to acces more pins if needed
+// include PinChangeInterrupt library* BEFORE IRLremote to access more pins if needed
 //#include "PinChangeInterrupt.h"
 //
 #include <EEPROM.h>
@@ -178,9 +178,7 @@ long interval = 125;           // interval at which to blink (milliseconds)
 int ledState = LOW;
 boolean flashy = false;
 
-//volatile uint8_t currentSignal = 0x8; //for flashy
-//volatile uint8_t sendSignal = 0x9; //for normal
-volatile uint8_t inSignal = 0xA; //for both
+volatile uint8_t inSignal = 0xF; //for storing signal - fade for test use 0xA (blue) for real
 volatile uint8_t prevSignal = 0xA; //for memory
 volatile uint8_t oneSignal = 0xA; //for flashy3Way
 volatile uint8_t twoSignal = 0xA; //for flashy3Way
@@ -222,7 +220,7 @@ void setup()
   delay(500);
   Green();
   delay(500);
-  Blue();
+  Fade();
   delay(500);
   
 
@@ -297,6 +295,7 @@ void loop()
 //        Serial.println(inSignal);
         eepromTimeAddr+=4;
         eepromColAddr++; //on to the next colour
+        //change below timer array only saving max 50!
         if(eepromColAddr > 500){ //too much go back
           eepromTimeAddr = 124; //last one again
           eepromColAddr = 496; //last one again
@@ -520,27 +519,62 @@ void White() {
 //7h Fade
 void Fade() {
   //after some testing, on attiny85 Red and Blue pins support pwm but green does not. Need another solution for fading:
-
-  for (int i = 1; i < 1000; i++) {
+  //so here it is:
+  long fadeSpeed = 500;
+  for (int i = 1; i < fadeSpeed; i++) {
     digitalWrite(blueLed, HIGH);
     delayMicroseconds(i);
     digitalWrite(blueLed, LOW);
-    delayMicroseconds(1000 - i);
+    delayMicroseconds(fadeSpeed - i);
 
-    //    digitalWrite(greenLed, HIGH);
-    //    delayMicroseconds(i);
-    //    digitalWrite(greenLed, LOW);
-    //    delayMicroseconds(1000 - i);
-    //
-    digitalWrite(redLed, LOW);
+    digitalWrite(greenLed, HIGH);
     delayMicroseconds(i);
-    digitalWrite(redLed, HIGH);
-    delayMicroseconds(1000 - i);
+    digitalWrite(greenLed, LOW);
+    delayMicroseconds(fadeSpeed - i);
+
+        
   }
+  
+  for (int i = 1; i < fadeSpeed; i++) {
+    digitalWrite(blueLed, LOW);
+    delayMicroseconds(i);
+    digitalWrite(blueLed, HIGH);
+    delayMicroseconds(fadeSpeed - i);
+
+    digitalWrite(greenLed, LOW);
+    delayMicroseconds(i);
+    digitalWrite(greenLed, HIGH);
+    delayMicroseconds(fadeSpeed - i);
+
+        
+  }
+  /*
+ 
   for (int i = 1000; i > 0; i--) {
-    digitalWrite(blueLed, HIGH);
+    digitalWrite(greenLed, HIGH);
+    delayMicroseconds(1000 - i);
+    digitalWrite(greenLed, LOW);
     delayMicroseconds(i);
+    
+
+    //    digitalWrite(greenLed, HIGH);
+    //    delayMicroseconds(i);
+    //    digitalWrite(greenLed, LOW);
+    //    delayMicroseconds(1000 - i);
+    //
+    digitalWrite(blueLed, HIGH);
+    delayMicroseconds(1000 - i);
     digitalWrite(blueLed, LOW);
+    delayMicroseconds(i);
+    
+  }
+  */
+  
+  /*
+  for (int i = 1000; i > 0; i--) {
+    digitalWrite(greenLed, HIGH);
+    delayMicroseconds(i);
+    digitalWrite(greenLed, LOW);
     delayMicroseconds(1000 - i);
 
     //    digitalWrite(greenLed, HIGH);
@@ -548,12 +582,12 @@ void Fade() {
     //    digitalWrite(greenLed, LOW);
     //    delayMicroseconds(1000 - i);
     //
-    digitalWrite(redLed, LOW);
+    digitalWrite(blueLed, LOW);
     delayMicroseconds(i);
-    digitalWrite(redLed, HIGH);
+    digitalWrite(blueLed, HIGH);
     delayMicroseconds(1000 - i);
   }
-
+ */ 
 }
 //8i Strobe+
 void Strobeplus() {
