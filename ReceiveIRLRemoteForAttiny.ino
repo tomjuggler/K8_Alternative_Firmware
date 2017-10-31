@@ -34,7 +34,7 @@ Fade:
   Fade some colours (incomplete)
 
 Strobeplus: 
-  Blue - Off - Red - Off (strobing)
+  Colour1 - Off - Colour2 - Off (Strobing selection ++)
 
 RGBStrobe: 
   RGB
@@ -173,7 +173,7 @@ static uint8_t extraHEX5 = 0x13;
 
 long previousMillis = 0;        // will store last time LED was updated
 
-// constants won't change:
+long demoInterval = 10000; //change demo every 10 seconds
 long interval = 125;           // interval at which to blink (milliseconds)
 int ledState = LOW;
 boolean flashy = false;
@@ -386,7 +386,11 @@ void testCommand() {
     flashThreeWay = false;
     Fade();
     prevSignal = inSignal;
-  } else if (inSignal == strobeplusHEX) {
+  } else if (inSignal == demoHEX) { //demo not defined!
+    Demo();
+    flashy = false;
+    prevSignal = inSignal;
+  }else if (inSignal == strobeplusHEX) {
     interval = 2;
     flashy = false; //not working in flashy mode
     flashThreeWay = false;
@@ -734,7 +738,28 @@ void Next() {
 }
 //16q Demo
 void Demo() {
-  Off();
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= demoInterval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    if (rainbowWay == 0) {
+      Red();
+    } else if (rainbowWay == 1) {
+      Green();
+    } else if (rainbowWay == 2) {
+      Blue();
+    } else if (rainbowWay == 3) {
+      Cyan();
+    } else if (rainbowWay == 4) {
+      Yellow();
+    } else if (rainbowWay == 5) {
+      Magenta();
+    }
+    rainbowWay++;
+    if (rainbowWay > 5) {
+      rainbowWay = 0;
+    }
+  }
 
 }
 //17r Previous
