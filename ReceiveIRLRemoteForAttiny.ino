@@ -119,7 +119,7 @@ Extra5:
 // include PinChangeInterrupt library* BEFORE IRLremote to access more pins if needed
 //#include "PinChangeInterrupt.h"
 //
-#include <EEPROM.h>
+#include <EEPROM.h> 
 #include "IRLremote.h"
 
 // Choose a valid PinInterrupt or PinChangeInterrupt* pin of your Arduino board
@@ -137,7 +137,7 @@ boolean ready = false;
 //these are the exact same pins as K8:
 //1, 3, 4
 //only difference is (maybe) the colours!!!!!
-int blueLed = 5; //changed to avoid Serial conflict
+int blueLed = 1; //change to 5 on UNO to avoid Serial conflict
 int greenLed = 3; //middle
 int redLed = 4; //left
 int delayTime = 25;
@@ -178,7 +178,7 @@ long interval = 125;           // interval at which to blink (milliseconds)
 int ledState = LOW;
 boolean flashy = false;
 
-volatile uint8_t inSignal = 0xF; //for storing signal - fade for test use 0xA (blue) for real
+volatile uint8_t inSignal = 0xA; //for storing signal - fade for test use 0xA (blue) for real
 volatile uint8_t prevSignal = 0xA; //for memory
 volatile uint8_t oneSignal = 0xA; //for flashy3Way
 volatile uint8_t twoSignal = 0xA; //for flashy3Way
@@ -220,7 +220,7 @@ void setup()
   delay(500);
   Green();
   delay(500);
-  Fade();
+  Blue();
   delay(500);
   
 
