@@ -120,10 +120,10 @@ Extra5:
 //#include "PinChangeInterrupt.h"
 //
 #include <EEPROM.h> 
-#include "IRLremote.h"
+#include "IRLremote.h" //TODO: port to IRRemote library which uses software interrupt (and enables using pin 4 hopefully)
 
 // Choose a valid PinInterrupt or PinChangeInterrupt* pin of your Arduino board
-#define pinIR 2
+#define pinIR 2 //this is actually 4 on K8, does the library support this though? NOOOOOO!!! 
 
 // Choose the IR protocol of your remote. See the other example for this.
 CNec IRLremote;
@@ -135,11 +135,11 @@ CNec IRLremote;
 
 boolean ready = false;
 //these are the exact same pins as K8:
-//1, 3, 4
-//only difference is (maybe) the colours!!!!!
-int blueLed = 1; //change to 5 on UNO to avoid Serial conflict
+//Blue: 1, Green: 3, Red: 2 on K8. Tested now - correct. 
+
+int blueLed = 1; //1 on attiny - change to 5 on UNO to avoid Serial conflict 
 int greenLed = 3; //middle
-int redLed = 4; //left
+int redLed = 4; //Actually 2 on K8
 int delayTime = 25;
 
 int selection = 0;
@@ -189,7 +189,7 @@ uint8_t fadeAWay = 0;
 uint8_t rainbowWay = 0;
 uint8_t plusWay = 0;
 
-long timings[50];// max should be 128, 127 to be safe, or maybe just 100 to keep some memory for other things... ok 50 save size for attiny...
+long timings[50];// max should be 128, 127 to be safe, or maybe just 100 to keep some memory for other things... ok no 50 save size for attiny...
 uint8_t colours[50];
 boolean recording = false;
 long recStartTime = 0;
@@ -221,7 +221,7 @@ void setup()
   Green();
   delay(500);
   Blue();
-  delay(500);
+//  delay(500);
   
 
   /*
@@ -855,9 +855,3 @@ long EEPROMReadlong(long address)
   //Return the recomposed long by using bitshift.
   return ((four << 0) & 0xFF) + ((three << 8) & 0xFFFF) + ((two << 16) & 0xFFFFFF) + ((one << 24) & 0xFFFFFFFF);
 }
-
-
-
-
-
-
