@@ -204,6 +204,9 @@ int runNum = 0;
 int strobePlusOptions = 0;
 int strobePlusOptionsMax = 5;
 
+uint8_t lastPattern = 0;
+uint8_t endPattern = 21;
+
 void setup()
 {
   // eeprom write test:
@@ -216,12 +219,12 @@ void setup()
   // Serial.begin(115200); //Serial conflicts with Pin1 - Green I think!
   // Serial.println("Startup");
 
-  // Startup sequence:
-  Red();
-  delay(500);
-  Green();
-  delay(500);
-  Blue();
+  // Startup sequence?:
+  // Red();
+  // delay(500);
+  // Green();
+  // delay(500);
+  // Blue();
 
   /*
     long timeDelay1 = timings[0];
@@ -257,6 +260,112 @@ void setup()
   {
     interval = 125;
   }
+
+// Red();
+// increment patterns on reboot:
+// todo: to save eeprom writes, need to re-factor the strobing patterns, as they call red() blue() etc all the time
+// this would wear eeprom too fast. For now not saving last pattern on button press. 
+  // lastPattern = 5; 
+  lastPattern = EEPROM.read(510); //this is not reading correctly. Why? 
+  // delay(100); //delay for read? 
+
+  lastPattern++;
+  if(lastPattern > endPattern)
+  {
+    lastPattern = 0;
+  }
+  //save pattern for next time: 
+  EEPROM.write(510, lastPattern);
+// delay(100); //write delay? 
+  //run pattern (commented some not working/not applicable)
+  //test:
+  
+  switch(lastPattern)
+  {
+    case 0: 
+      inSignal = greenHEX;
+      break;
+    case 1: 
+      inSignal = redHEX;
+      break;
+    case 2: 
+      inSignal = blueHEX;
+      break;
+    case 3: 
+      inSignal = yellowHEX;
+      break;
+    case 4: 
+      inSignal = cyanHEX;
+      break;
+    case 5: 
+      inSignal = magentaHEX;
+      break;
+    case 6: 
+      inSignal = whiteHEX;
+      break;
+    case 7: 
+      inSignal = redHEX;
+      // Fade();
+      break;
+    case 8: 
+      inSignal = greenHEX;
+      // Demo();
+      break;
+    case 9: 
+      inSignal = blueHEX;
+      // Strobeplus();
+      break;
+    case 10: 
+      inSignal = RGBStrobeHEX;
+      break;
+    case 11: 
+      inSignal = rainbowHEX;
+      break;
+    case 12: 
+      inSignal = halfstrobeHEX;
+      break;
+    case 13: 
+      inSignal = BGStrobeHEX;
+      break;
+    case 14: 
+      inSignal = GRStrobeHEX;
+      break;
+    case 15: 
+      inSignal = redHEX;
+      // Next();
+      break;
+    case 16:
+      inSignal = greenHEX;
+      // Previous();
+      break;
+    case 17: 
+      // Blue();
+      // inSignal = extraHEX1; // flashy on - does nothing
+      inSignal = blueHEX;
+      break;
+    case 18: 
+      inSignal = extraHEX2;
+      break;
+    case 19: 
+      inSignal = extraHEX3;
+      break;
+    case 20: 
+      inSignal = extraHEX4;
+      break;
+    case 21: 
+      inSignal = extraHEX5;
+      // Extra5();
+      break;
+    //not saving Off() obviously
+    // default: 
+    //   inSignal = redHEX;
+    //   break;
+  }
+
+  //test:
+  // inSignal = rainbowHEX;
+  
+  
 }
 
 void loop()
