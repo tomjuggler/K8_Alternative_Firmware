@@ -565,7 +565,7 @@ void testCommand()
   }
   else if (inSignal == strobeplusHEX)
   {
-    interval = 2;
+    // interval = 2; //no rather use current interval! 
     flashy = false; // not working in flashy mode
     flashThreeWay = false;
     Strobeplus();
@@ -675,8 +675,6 @@ void testCommand()
 // 0a
 void Red()
 {
-  //  flashy = false; //test
-  //  Off(); //this is having some sort of adversarial effect, too many concurrent digital writes to the same pin???
   digitalWrite(redLed, HIGH);
   digitalWrite(blueLed, LOW);
   digitalWrite(greenLed, LOW);
@@ -684,7 +682,6 @@ void Red()
 // 1b green
 void Green()
 {
-  //  Off();
   digitalWrite(greenLed, HIGH);
   digitalWrite(blueLed, LOW);
   digitalWrite(redLed, LOW);
@@ -692,7 +689,6 @@ void Green()
 // 2c blue
 void Blue()
 {
-  //  Off();
   digitalWrite(blueLed, HIGH);
   digitalWrite(redLed, LOW);
   digitalWrite(greenLed, LOW);
@@ -700,7 +696,6 @@ void Blue()
 // 3d Yellow
 void Yellow()
 {
-  //  Off();
   digitalWrite(greenLed, HIGH);
   digitalWrite(redLed, HIGH);
   digitalWrite(blueLed, LOW);
@@ -708,7 +703,6 @@ void Yellow()
 // 4e Cyan
 void Cyan()
 {
-  //  Off();
   digitalWrite(blueLed, HIGH);
   digitalWrite(greenLed, HIGH);
   digitalWrite(redLed, LOW);
@@ -716,7 +710,6 @@ void Cyan()
 // 5f Magenta
 void Magenta()
 {
-  //  Off();
   digitalWrite(blueLed, HIGH);
   digitalWrite(redLed, HIGH);
   digitalWrite(greenLed, LOW);
@@ -724,7 +717,6 @@ void Magenta()
 // 6g White
 void White()
 {
-  //  Off();
   digitalWrite(blueLed, HIGH);
   digitalWrite(greenLed, HIGH);
   digitalWrite(redLed, HIGH);
@@ -760,7 +752,7 @@ void Fade()
     digitalWrite(greenLed, HIGH);
     delayMicroseconds(fadeSpeed - i);
   }
-  /*
+  
 
   for (int i = 1000; i > 0; i--) {
     digitalWrite(greenLed, HIGH);
@@ -780,9 +772,9 @@ void Fade()
     delayMicroseconds(i);
 
   }
-  */
+  
 
-  /*
+  
   for (int i = 1000; i > 0; i--) {
     digitalWrite(greenLed, HIGH);
     delayMicroseconds(i);
@@ -799,7 +791,7 @@ void Fade()
     digitalWrite(blueLed, HIGH);
     delayMicroseconds(1000 - i);
   }
- */
+ 
 }
 // 8i Strobe+
 void Strobeplus()
@@ -1042,6 +1034,10 @@ void Previous()
 void Extra1()
 {
   flashy = !flashy; // toggle strobing
+  if(flashThreeWay){
+    flashThreeWay = false; // exit flashy three way
+    Red();
+  }
 }
 void Extra2()
 {
