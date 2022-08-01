@@ -1,3 +1,4 @@
+ 
 /*
    LED code by Tom Hastings
    upgrading k8 juggling clubs internal code
@@ -137,7 +138,7 @@ boolean ready = false;
 // these are the exact same pins as K8:
 // Blue: 1, Green: 3, Red: 2 on K8. Tested now - correct.
 
-int blueLed = 1;  // 1 on attiny - change to 5 on UNO to avoid Serial conflict
+int blueLed = 1;  // 1 on attiny - change to 5 on UNO to avoid //Serial conflict
 int greenLed = 3; // middle
 int redLed = 2;   // Actually 2 on K8
 int delayTime = 25;
@@ -172,6 +173,7 @@ static uint8_t extraHEX4 = 0x12;
 static uint8_t extraHEX5 = 0x13;
 
 long previousMillis = 0; // will store last time LED was updated
+long currentMillis2 = 0; 
 
 long demoInterval = 10000; // change demo every 10 seconds
 long interval = 125;       // interval at which to blink (milliseconds) //todo: add this to eeprom memory - save last state
@@ -216,8 +218,8 @@ void setup()
   pinMode(blueLed, OUTPUT);
   pinMode(greenLed, OUTPUT);
   pinMode(redLed, OUTPUT);
-  // Serial.begin(115200); //Serial conflicts with Pin1 - Green I think!
-  // Serial.println("Startup");
+  //Serial.begin(115200); // //Serial conflicts with Pin1 - Green I think!
+  //Serial.println("Startup");
 
   // Startup sequence?:
   // Red();
@@ -243,15 +245,15 @@ void setup()
   for (int i = 0; i < maxEepromSignalNum; i++)
   {
     timings[i] = EEPROMReadlong(i * 4);
-    // Serial.print("timings ");
-    // Serial.print(i);
-    // Serial.print (" = ");
-    // Serial.println(timings[i]);
+    //Serial.print("timings ");
+    //Serial.print(i);
+    //Serial.print (" = ");
+    //Serial.println(timings[i]);
     colours[i] = EEPROM.read(384 + i);
-    // Serial.print("colours ");
-    // Serial.print(i);
-    // Serial.print(" = ");
-    // Serial.println(colours[i]);
+    //Serial.print("colours ");
+    //Serial.print(i);
+    //Serial.print(" = ");
+    //Serial.println(colours[i]);
   }
 
   //get saved value for interval and flashy:
@@ -260,6 +262,8 @@ void setup()
   {
     interval = 125;
   }
+  //Serial.print("Interval: ");
+  //Serial.println(interval);
 
 // Red();
 // increment patterns on reboot:
@@ -374,28 +378,35 @@ void loop()
   // test:
   if (playing)
   {
-    if (runNum >= maxEepromSignalNum - 1)
+    if (runNum > maxEepromSignalNum - 1)
     {
       runNum = 0;
     }
-    long currentMillis2 = millis() - recStartTime; // reset the clock! At the beginning of play this should be 0!
-    if (currentMillis2 < timings[runNum])
-    {
-      //          Serial.print("< ");
-      //          Serial.println(runNum);
-    }
-    //   I think currently timings[] array must be in time order to work. If the last time is smaller than the previous nothing happens. todo: sort?
-    else if (currentMillis2 >= timings[runNum] && currentMillis2 <= timings[runNum + 1])
-    { // saved signal
-      //          Serial.print("== ");
-      //          Serial.println(runNum);
-      inSignal = colours[runNum];
+    //another sanity check: 
+    if(timings[runNum] > 0){   
+        // //Serial.print("Checking timing for ");
+        // //Serial.print(timings[runNum]);
+        // //Serial.println(" timings[runNum");
+        currentMillis2 = millis() - recStartTime; // reset the clock! At the beginning of play this should be 0!
+        if (currentMillis2 < timings[runNum])
+        {
+                // //Serial.print("< ");
+                // //Serial.println(runNum);
+        }
+        //   I think currently timings[] array must be in time order to work. If the last time is smaller than the previous nothing happens. todo: sort?
+        else if (currentMillis2 >= timings[runNum] && currentMillis2 <= timings[runNum + 1]) //todo: this omits the last signal..
+        { // saved signal
+                //Serial.print("== ");
+                //Serial.println(runNum);
+        //sanity check: 
+            if (colours[runNum] < 22){ //max is 22 otherwise it's a bogus signal 
+                inSignal = colours[runNum];
+                //Serial.print("colour is set to: ");
+                //Serial.println(colours[runNum]);
+            }      
+      
       //todo: if inSignal is nothing, go to runNum = 0
-    }
-    else
-    {
-      //          Serial.print("> ");
-      //          Serial.println(runNum);
+        }
     }
     runNum++;
   }
@@ -413,22 +424,30 @@ void loop()
     {
       inSignal = data.command;
       if (recording)
-      { // recording activated by pressing 'ON' button
-        // eeprom write test:
-        // Note: need to record strobing/not strobing information as well as strobe speed here too. or just press strobe button...buggy though
-        EEPROMWritelong(eepromTimeAddr, millis() - recStartTime); // save this in Array for immediate playback/testing?
-        //        Serial.print("saved time: ");
-        //        Serial.print(millis()-recStartTime);
-        EEPROM.write(eepromColAddr, inSignal); // and save in Array too?
-        //        Serial.print(" Signal: ");
-        //        Serial.println(inSignal);
-        eepromTimeAddr += 4;
-        eepromColAddr++; // on to the next colour
-        // change below timer array only saving max 50!
-        if (eepromColAddr > 500)
-        {                       // too much go back
-          eepromTimeAddr = 124; // last one again
-          eepromColAddr = 496;  // last one again
+      { // recording activated by pressing 'ON' button      
+        if (inSignal == onHEX || inSignal == offHEX) // don't save "RECORD" signal or "PLAY" signal: 
+        {
+
+        } else{
+            // eeprom write test:
+            // Note: need to record strobing/not strobing information as well as strobe speed here too. or just press strobe button...buggy though
+            EEPROMWritelong(eepromTimeAddr, millis() - recStartTime); // save this in Array for immediate playback/testing?
+            timings[eepromTimeAddr/4] = millis() - recStartTime; //save for immediate playback
+            //Serial.print("saved time: ");
+            //Serial.print(millis()-recStartTime);
+            EEPROM.write(eepromColAddr, inSignal); // and save in Array too?
+            colours[eepromColAddr-384] = inSignal; //save for immediate playback
+            //Serial.print(" Signal: ");
+            //Serial.println(inSignal);
+            eepromTimeAddr += 4;
+            eepromColAddr++; // on to the next colour
+            // change below timer array only saving max 50!
+            if (eepromColAddr > 500)
+            {                       // too much go back
+            //Serial.println("too much record, go back!");
+            eepromTimeAddr = 124; // last one again
+            eepromColAddr = 496;  // last one again
+            }
         }
       }
 
@@ -650,6 +669,7 @@ void testCommand()
   }
   else if (inSignal == offHEX)
   {             // start playing back recording
+    //Serial.println("PLAY START");
     runNum = 0; // reset to start again
     recStartTime = millis();
     recording = false;
@@ -663,12 +683,14 @@ void testCommand()
   else if (inSignal == onHEX)
   { // start recording
   //todo: re-set all eeprom
-  //indicator for recording: Red()
+  //indicator for recording: Red() - not working? 
+    //Serial.println("RECORD START");
+    On();
     inSignal = prevSignal;
     recStartTime = millis();
     playing = false;
     recording = true;
-    Red();
+    // Red();
   }
 }
 
@@ -969,6 +991,18 @@ void Off()
 }
 void On()
 {
+//re-set eeprom recording data to 0: 
+// Note: need to record strobing/not strobing information as well as strobe speed here too. or just press strobe button...buggy though
+  for (int i = 0; i < maxEepromSignalNum; i++)
+  {
+    timings[i] = 0; // time
+    colours[i] = 0; // colour
+    EEPROMWritelong(i*4, 0); // time
+    EEPROM.write(i+384, 255);  // colour
+  }
+            
+  eepromTimeAddr = 0; // re-set to first address
+  eepromColAddr = 384;  // re-set to first address!
   recording = true;
 }
 // 15p Next
