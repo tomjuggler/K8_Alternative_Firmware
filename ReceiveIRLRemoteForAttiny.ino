@@ -1,4 +1,4 @@
- 
+
 /*
    LED code by Tom Hastings
    upgrading k8 juggling clubs internal code
@@ -173,7 +173,7 @@ static uint8_t extraHEX4 = 0x12;
 static uint8_t extraHEX5 = 0x13;
 
 long previousMillis = 0; // will store last time LED was updated
-long currentMillis2 = 0; 
+long currentMillis2 = 0;
 
 long demoInterval = 10000; // change demo every 10 seconds
 long interval = 125;       // interval at which to blink (milliseconds) //todo: add this to eeprom memory - save last state
@@ -191,20 +191,22 @@ uint8_t fadeAWay = 0;
 uint8_t rainbowWay = 0;
 uint8_t plusWay = 0;
 
-long timings[50]; // max should be 128, 127 to be safe, or maybe just 100 to keep some memory for other things... ok no 50 save size for attiny...
+long timings[50]; // max should be 50 to save space for attiny...
 uint8_t colours[50];
+uint8_t flashes[50];
 boolean recording = false;
 long recStartTime = 0;
 long recEndTime = 1000000;
 boolean playing = false;
 
-int eepromTimeAddr = 0;      // incr by 4 for long
-int eepromColAddr = 384;     // maximum 128 signals if nothing else is saved...
+int eepromTimeAddr = 0;  // incr by 4 for long 0 - 199
+int eepromColAddr = 200; // maximum 50 signals 200 - 249
+int eepromFlashAddr = 250;
 int maxEepromSignalNum = 50; // using only 50 now
 int runNum = 0;
 
 int strobePlusOptions = 0;
-int strobePlusOptionsMax = 5;
+static int strobePlusOptionsMax = 5;
 
 uint8_t lastPattern = 0;
 uint8_t endPattern = 21;
@@ -218,8 +220,8 @@ void setup()
   pinMode(blueLed, OUTPUT);
   pinMode(greenLed, OUTPUT);
   pinMode(redLed, OUTPUT);
-  //Serial.begin(115200); // //Serial conflicts with Pin1 - Green I think!
-  //Serial.println("Startup");
+  // Serial.begin(115200); // //Serial conflicts with Pin1 - Green I think!
+  // Serial.println("Startup");
 
   // Startup sequence?:
   // Red();
@@ -242,134 +244,134 @@ void setup()
   {
   }
 
+  // TODO: optimize EEPROM usage, how much more can I do with it?
+
   for (int i = 0; i < maxEepromSignalNum; i++)
   {
     timings[i] = EEPROMReadlong(i * 4);
-    //Serial.print("timings ");
-    //Serial.print(i);
-    //Serial.print (" = ");
-    //Serial.println(timings[i]);
-    colours[i] = EEPROM.read(384 + i);
-    //Serial.print("colours ");
-    //Serial.print(i);
-    //Serial.print(" = ");
-    //Serial.println(colours[i]);
+    // Serial.print("timings ");
+    // Serial.print(i);
+    // Serial.print (" = ");
+    // Serial.println(timings[i]);
+    colours[i] = EEPROM.read(200 + i);
+    // Serial.print("colours ");
+    // Serial.print(i);
+    // Serial.print(" = ");
+    // Serial.println(colours[i]);
   }
 
-  //get saved value for interval and flashy:
+  // get saved value for interval and flashy:
   interval = EEPROMReadlong(500);
-  if(interval > 500 || interval < 5)
+  if (interval > 500 || interval < 5)
   {
     interval = 125;
   }
-  //Serial.print("Interval: ");
-  //Serial.println(interval);
+  // Serial.print("Interval: ");
+  // Serial.println(interval);
 
-// Red();
-// increment patterns on reboot:
-// todo: to save eeprom writes, need to re-factor the strobing patterns, as they call red() blue() etc all the time
-// this would wear eeprom too fast. For now not saving last pattern on button press. 
-  // lastPattern = 5; 
-  lastPattern = EEPROM.read(510); //this is not reading correctly. Why? 
-  // delay(100); //delay for read? 
+  // Red();
+  // increment patterns on reboot:
+  // todo: to save eeprom writes, need to re-factor the strobing patterns, as they call red() blue() etc all the time
+  // this would wear eeprom too fast. For now not saving last pattern on button press.
+  // lastPattern = 5;
+  lastPattern = EEPROM.read(510); // this is not reading correctly. Why?
+  // delay(100); //delay for read?
 
   lastPattern++;
-  if(lastPattern > endPattern)
+  if (lastPattern > endPattern)
   {
     lastPattern = 0;
   }
-  //save pattern for next time: 
+  // save pattern for next time:
   EEPROM.write(510, lastPattern);
-// delay(100); //write delay? 
-  //run pattern (commented some not working/not applicable)
-  //test:
-  
-  switch(lastPattern)
+  // delay(100); //write delay?
+  // run pattern (commented some not working/not applicable)
+  // test:
+
+  switch (lastPattern)
   {
-    case 0: 
-      inSignal = greenHEX;
-      break;
-    case 1: 
-      inSignal = redHEX;
-      break;
-    case 2: 
-      inSignal = blueHEX;
-      break;
-    case 3: 
-      inSignal = yellowHEX;
-      break;
-    case 4: 
-      inSignal = cyanHEX;
-      break;
-    case 5: 
-      inSignal = magentaHEX;
-      break;
-    case 6: 
-      inSignal = whiteHEX;
-      break;
-    case 7: 
-      inSignal = redHEX;
-      // Fade();
-      break;
-    case 8: 
-      inSignal = greenHEX;
-      // Demo();
-      break;
-    case 9: 
-      inSignal = blueHEX;
-      // Strobeplus();
-      break;
-    case 10: 
-      inSignal = RGBStrobeHEX;
-      break;
-    case 11: 
-      inSignal = rainbowHEX;
-      break;
-    case 12: 
-      inSignal = halfstrobeHEX;
-      break;
-    case 13: 
-      inSignal = BGStrobeHEX;
-      break;
-    case 14: 
-      inSignal = GRStrobeHEX;
-      break;
-    case 15: 
-      inSignal = redHEX;
-      // Next();
-      break;
-    case 16:
-      inSignal = greenHEX;
-      // Previous();
-      break;
-    case 17: 
-      // Blue();
-      // inSignal = extraHEX1; // flashy on - does nothing
-      inSignal = blueHEX;
-      break;
-    case 18: 
-      inSignal = extraHEX2;
-      break;
-    case 19: 
-      inSignal = extraHEX3;
-      break;
-    case 20: 
-      inSignal = extraHEX4;
-      break;
-    case 21: 
-      inSignal = extraHEX5;
-      // Extra5();
-      break;
-    //not saving Off() obviously
-    // default: 
-    //   inSignal = redHEX;
-    //   break;
+  case 0:
+    inSignal = greenHEX;
+    break;
+  case 1:
+    inSignal = redHEX;
+    break;
+  case 2:
+    inSignal = blueHEX;
+    break;
+  case 3:
+    inSignal = yellowHEX;
+    break;
+  case 4:
+    inSignal = cyanHEX;
+    break;
+  case 5:
+    inSignal = magentaHEX;
+    break;
+  case 6:
+    inSignal = whiteHEX;
+    break;
+  case 7:
+    inSignal = redHEX;
+    // Fade();
+    break;
+  case 8:
+    inSignal = greenHEX;
+    // Demo();
+    break;
+  case 9:
+    inSignal = blueHEX;
+    // Strobeplus();
+    break;
+  case 10:
+    inSignal = RGBStrobeHEX;
+    break;
+  case 11:
+    inSignal = rainbowHEX;
+    break;
+  case 12:
+    inSignal = halfstrobeHEX;
+    break;
+  case 13:
+    inSignal = BGStrobeHEX;
+    break;
+  case 14:
+    inSignal = GRStrobeHEX;
+    break;
+  case 15:
+    inSignal = redHEX;
+    // Next();
+    break;
+  case 16:
+    inSignal = greenHEX;
+    // Previous();
+    break;
+  case 17:
+    // Blue();
+    // inSignal = extraHEX1; // flashy on - does nothing
+    inSignal = blueHEX;
+    break;
+  case 18:
+    inSignal = extraHEX2;
+    break;
+  case 19:
+    inSignal = extraHEX3;
+    break;
+  case 20:
+    inSignal = extraHEX4;
+    break;
+  case 21:
+    inSignal = extraHEX5;
+    // Extra5();
+    break;
+    // not saving Off() obviously
+    //  default:
+    //    inSignal = redHEX;
+    //    break;
   }
 
-  //test:
-  // inSignal = rainbowHEX;
-  
-  
+  // test:
+  //  inSignal = rainbowHEX;
 }
 
 void loop()
@@ -382,31 +384,34 @@ void loop()
     {
       runNum = 0;
     }
-    //another sanity check: 
-    if(timings[runNum] > 0){   
-        // //Serial.print("Checking timing for ");
-        // //Serial.print(timings[runNum]);
-        // //Serial.println(" timings[runNum");
-        currentMillis2 = millis() - recStartTime; // reset the clock! At the beginning of play this should be 0!
-        if (currentMillis2 < timings[runNum])
-        {
-                // //Serial.print("< ");
-                // //Serial.println(runNum);
+    // another sanity check:
+    if (timings[runNum] > 0)
+    {
+      // //Serial.print("Checking timing for ");
+      // //Serial.print(timings[runNum]);
+      // //Serial.println(" timings[runNum");
+      currentMillis2 = millis() - recStartTime; // reset the clock! At the beginning of play this should be 0!
+      if (currentMillis2 < timings[runNum])
+      {
+        // //Serial.print("< ");
+        // //Serial.println(runNum);
+      }
+      //   I think currently timings[] array must be in time order to work. If the last time is smaller than the previous nothing happens. todo: sort?
+      else if (currentMillis2 >= timings[runNum] && currentMillis2 <= timings[runNum + 1]) // todo: this omits the last signal..
+      {                                                                                    // saved signal
+                                                                                           // Serial.print("== ");
+        // Serial.println(runNum);
+        // sanity check:
+        if (colours[runNum] < 22)
+        { // max is 22 otherwise it's a bogus signal
+          inSignal = colours[runNum];
+          flashy = flashes[runNum];
+          // Serial.print("colour is set to: ");
+          // Serial.println(colours[runNum]);
         }
-        //   I think currently timings[] array must be in time order to work. If the last time is smaller than the previous nothing happens. todo: sort?
-        else if (currentMillis2 >= timings[runNum] && currentMillis2 <= timings[runNum + 1]) //todo: this omits the last signal..
-        { // saved signal
-                //Serial.print("== ");
-                //Serial.println(runNum);
-        //sanity check: 
-            if (colours[runNum] < 22){ //max is 22 otherwise it's a bogus signal 
-                inSignal = colours[runNum];
-                //Serial.print("colour is set to: ");
-                //Serial.println(colours[runNum]);
-            }      
-      
-      //todo: if inSignal is nothing, go to runNum = 0
-        }
+
+        // todo: if inSignal is nothing, go to runNum = 0
+      }
     }
     runNum++;
   }
@@ -424,36 +429,55 @@ void loop()
     {
       inSignal = data.command;
       if (recording)
-      { // recording activated by pressing 'ON' button      
-        if (inSignal == onHEX || inSignal == offHEX) // don't save "RECORD" signal or "PLAY" signal: 
+      {                                              // recording activated by pressing 'ON' button
+        if (inSignal == onHEX || inSignal == offHEX) // don't save "RECORD" signal or "PLAY" signal:
         {
-
-        } else{
-            // eeprom write test:
-            // Note: need to record strobing/not strobing information as well as strobe speed here too. or just press strobe button...buggy though
+        }
+        else if (inSignal == extraHEX1) // don't record flash signal
+        {
+          //flashy should be caught? 
+        }
+        else
+        {
+          if (eepromColAddr > 249)
+          {
+            eepromColAddr = 250;
+            recording = false; // stop recording
+            inSignal = offHEX;
+            Off(); //not working..
+          }
+          else
+          {
+            // Note: TODO: need to record strobing/not strobing information as well as strobe speed here too. or just press strobe button...buggy though
             EEPROMWritelong(eepromTimeAddr, millis() - recStartTime); // save this in Array for immediate playback/testing?
-            timings[eepromTimeAddr/4] = millis() - recStartTime; //save for immediate playback
-            //Serial.print("saved time: ");
-            //Serial.print(millis()-recStartTime);
-            EEPROM.write(eepromColAddr, inSignal); // and save in Array too?
-            colours[eepromColAddr-384] = inSignal; //save for immediate playback
-            //Serial.print(" Signal: ");
-            //Serial.println(inSignal);
+            timings[eepromTimeAddr / 4] = millis() - recStartTime;    // save for immediate playback
+            // Serial.print("saved time: ");
+            // Serial.print(millis()-recStartTime);
+            EEPROM.write(eepromColAddr, inSignal);   // and save in Array too?
+            colours[eepromColAddr - 200] = inSignal; // save for immediate playback
+
+            EEPROM.write(eepromFlashAddr, flashy);
+            flashes[eepromColAddr - 200] = flashy;
+            // Serial.print(" Signal: ");
+            // Serial.println(inSignal);
             eepromTimeAddr += 4;
-            eepromColAddr++; // on to the next colour
-            // change below timer array only saving max 50!
-            if (eepromColAddr > 500)
-            {                       // too much go back
-            //Serial.println("too much record, go back!");
-            eepromTimeAddr = 124; // last one again
-            eepromColAddr = 496;  // last one again
-            }
+            eepromColAddr++;   // on to the next colour
+            eepromFlashAddr++; // on to the next flash
+
+            // if (eepromColAddr > 49)
+            // { // too much go back
+            //   // Serial.println("too much record, go back!");
+            //   eepromTimeAddr = 199;  // overwrite last timing again?
+            //   eepromColAddr = 249;   // overwrite last colour again?
+            //   eepromFlashAddr = 299; // overwrite last flash again?
+            // }
+          }
         }
       }
 
       if (playing)
       {
-        playing = false; //stop playback
+        playing = false; // stop playback
       }
     }
   }
@@ -584,7 +608,7 @@ void testCommand()
   }
   else if (inSignal == strobeplusHEX)
   {
-    // interval = 2; //no rather use current interval! 
+    // interval = 2; //no rather use current interval!
     flashy = false; // not working in flashy mode
     flashThreeWay = false;
     Strobeplus();
@@ -668,8 +692,8 @@ void testCommand()
     prevSignal = inSignal;
   }
   else if (inSignal == offHEX)
-  {             // start playing back recording
-    //Serial.println("PLAY START");
+  { // start playing back recording
+    // Serial.println("PLAY START");
     runNum = 0; // reset to start again
     recStartTime = millis();
     recording = false;
@@ -682,14 +706,14 @@ void testCommand()
   }
   else if (inSignal == onHEX)
   { // start recording
-  //todo: re-set all eeprom
-  //indicator for recording: Red() - not working? 
-    //Serial.println("RECORD START");
+    // todo: re-set all eeprom
+    // indicator for recording: Red() - not working?
+    // Serial.println("RECORD START");
     On();
-    inSignal = prevSignal;
-    recStartTime = millis();
-    playing = false;
-    recording = true;
+    // inSignal = prevSignal;
+    // recStartTime = millis();
+    // playing = false;
+    // recording = true;
     // Red();
   }
 }
@@ -746,74 +770,123 @@ void White()
 // 7h Fade
 void Fade()
 {
+  long fadeSpeed = 500;
+  // delayMicroseconds was causing an issue so replaced with another Demo - might change this at some point.
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= fadeSpeed)
+  {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+    if (rainbowWay == 0)
+    {
+      Red();
+    }
+    else if (rainbowWay == 1)
+    {
+      Green();
+    }
+    else if (rainbowWay == 2)
+    {
+      Blue();
+    }
+    else if (rainbowWay == 3)
+    {
+      Cyan();
+    }
+    else if (rainbowWay == 4)
+    {
+      Yellow();
+    }
+    else if (rainbowWay == 5)
+    {
+      Magenta();
+    }
+    rainbowWay++;
+    if (rainbowWay > 5)
+    {
+      rainbowWay = 0;
+    }
+  }
   // after some testing, on attiny85 Red and Blue pins support pwm but green does not. Need another solution for fading:
   // so here it is:
-  long fadeSpeed = 500;
-  for (int i = 1; i < fadeSpeed; i++)
-  {
-    digitalWrite(blueLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(blueLed, LOW);
-    delayMicroseconds(fadeSpeed - i);
 
-    digitalWrite(greenLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(greenLed, LOW);
-    delayMicroseconds(fadeSpeed - i);
-  }
+  // for (int i = 1; i < fadeSpeed; i++)
+  // {
+  //   digitalWrite(blueLed, HIGH);
+  //   delayMicroseconds(i);
+  //   digitalWrite(blueLed, LOW);
+  //   delayMicroseconds(fadeSpeed - i);
 
-  for (int i = 1; i < fadeSpeed; i++)
-  {
-    digitalWrite(blueLed, LOW);
-    delayMicroseconds(i);
-    digitalWrite(blueLed, HIGH);
-    delayMicroseconds(fadeSpeed - i);
+  //   digitalWrite(greenLed, LOW);
+  //   delayMicroseconds(i);
+  //   digitalWrite(greenLed, HIGH);
+  //   delayMicroseconds(fadeSpeed - i);
+  // }
 
-    digitalWrite(greenLed, LOW);
-    delayMicroseconds(i);
-    digitalWrite(greenLed, HIGH);
-    delayMicroseconds(fadeSpeed - i);
-  }
-  
+  // for (int i = fadeSpeed; i > 0; i--)
+  // {
+  //   digitalWrite(redLed, LOW);
+  //   delayMicroseconds(i);
+  //   digitalWrite(redLed, HIGH);
+  //   delayMicroseconds(fadeSpeed - i);
 
-  for (int i = 1000; i > 0; i--) {
-    digitalWrite(greenLed, HIGH);
-    delayMicroseconds(1000 - i);
-    digitalWrite(greenLed, LOW);
-    delayMicroseconds(i);
+  //   digitalWrite(greenLed, HIGH);
+  //   delayMicroseconds(i);
+  //   digitalWrite(greenLed, LOW);
+  //   delayMicroseconds(fadeSpeed - i);
+  // }
 
+  // for (int i = 1; i < fadeSpeed; i++)
+  // {
+  //   digitalWrite(greenLed, LOW);
+  //   delayMicroseconds(i);
+  //   digitalWrite(greenLed, HIGH);
+  //   delayMicroseconds(fadeSpeed - i);
 
-    //    digitalWrite(greenLed, HIGH);
-    //    delayMicroseconds(i);
-    //    digitalWrite(greenLed, LOW);
-    //    delayMicroseconds(1000 - i);
-    //
-    digitalWrite(blueLed, HIGH);
-    delayMicroseconds(1000 - i);
-    digitalWrite(blueLed, LOW);
-    delayMicroseconds(i);
+  //   digitalWrite(redLed, HIGH);
+  //   delayMicroseconds(i);
+  //   digitalWrite(redLed, LOW);
+  //   delayMicroseconds(fadeSpeed - i);
+  // }
 
-  }
-  
+  // for (int i = fadeSpeed; i > 0; i--)
+  // {
+  //   digitalWrite(greenLed, HIGH);
+  //   delayMicroseconds(i);
+  //   digitalWrite(greenLed, LOW);
+  //   delayMicroseconds(fadeSpeed - i);
 
-  
-  for (int i = 1000; i > 0; i--) {
-    digitalWrite(greenLed, HIGH);
-    delayMicroseconds(i);
-    digitalWrite(greenLed, LOW);
-    delayMicroseconds(1000 - i);
+  //   digitalWrite(redLed, LOW);
+  //   delayMicroseconds(i);
+  //   digitalWrite(redLed, HIGH);
+  //   delayMicroseconds(fadeSpeed - i);
+  // }
 
-    //    digitalWrite(greenLed, HIGH);
-    //    delayMicroseconds(i);
-    //    digitalWrite(greenLed, LOW);
-    //    delayMicroseconds(1000 - i);
-    //
-    digitalWrite(blueLed, LOW);
-    delayMicroseconds(i);
-    digitalWrite(blueLed, HIGH);
-    delayMicroseconds(1000 - i);
-  }
- 
+  // for (int i = 1; i < fadeSpeed; i++)
+  // {
+  //   digitalWrite(redLed, HIGH);
+  //   delayMicroseconds(i);
+  //   digitalWrite(redLed, LOW);
+  //   delayMicroseconds(fadeSpeed - i);
+
+  //   digitalWrite(blueLed, LOW);
+  //   delayMicroseconds(i);
+  //   digitalWrite(blueLed, HIGH);
+  //   delayMicroseconds(fadeSpeed - i);
+  // }
+
+  // for (int i = fadeSpeed; i > 0; i--)
+  // {
+  //   digitalWrite(redLed, HIGH);
+  //   delayMicroseconds(i);
+  //   digitalWrite(redLed, LOW);
+  //   delayMicroseconds(fadeSpeed - i);
+
+  //   digitalWrite(blueLed, LOW);
+  //   delayMicroseconds(i);
+  //   digitalWrite(blueLed, HIGH);
+  //   delayMicroseconds(fadeSpeed - i);
+  // }
 }
 // 8i Strobe+
 void Strobeplus()
@@ -991,19 +1064,28 @@ void Off()
 }
 void On()
 {
-//re-set eeprom recording data to 0: 
-// Note: need to record strobing/not strobing information as well as strobe speed here too. or just press strobe button...buggy though
-  for (int i = 0; i < maxEepromSignalNum; i++)
-  {
-    timings[i] = 0; // time
-    colours[i] = 0; // colour
-    EEPROMWritelong(i*4, 0); // time
-    EEPROM.write(i+384, 255);  // colour
+  // Serial.println("ON");
+  // re-set eeprom recording data to 0:
+  //  Note: need to record strobing/not strobing information as well as strobe speed here too. or just press strobe button...buggy though
+  if (!recording)
+  { // do this once only
+    for (int i = 0; i < maxEepromSignalNum; i++)
+    {
+      timings[i] = 0;             // time
+      colours[i] = 0;             // colour
+      flashes[i] = 0;             // flash off
+      EEPROMWritelong(i * 4, 0);  // time
+      EEPROM.write(i + 200, 255); // colour
+      EEPROM.write(i + 250, 0);   // flashy
+    }
+
+    eepromTimeAddr = 0;  // re-set to first address
+    eepromColAddr = 200; // re-set to first address!
+    inSignal = prevSignal;
+    recStartTime = millis();
+    playing = false;
+    recording = true;
   }
-            
-  eepromTimeAddr = 0; // re-set to first address
-  eepromColAddr = 384;  // re-set to first address!
-  recording = true;
 }
 // 15p Next
 void Next()
@@ -1013,7 +1095,7 @@ void Next()
   {
     interval = 5;
   }
-  EEPROMWritelong(500, interval); 
+  EEPROMWritelong(500, interval);
 }
 // 16q Demo
 void Demo()
@@ -1068,7 +1150,8 @@ void Previous()
 void Extra1()
 {
   flashy = !flashy; // toggle strobing
-  if(flashThreeWay){
+  if (flashThreeWay)
+  {
     flashThreeWay = false; // exit flashy three way
     Red();
   }
