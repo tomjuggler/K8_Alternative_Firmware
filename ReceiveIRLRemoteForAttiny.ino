@@ -211,6 +211,9 @@ static int strobePlusOptionsMax = 5;
 uint8_t lastPattern = 0;
 uint8_t endPattern = 21;
 
+long fadeSpeed = 500;
+boolean upDownFade = false;
+
 void setup()
 {
   // eeprom write test:
@@ -443,7 +446,7 @@ void loop()
           {
             eepromColAddr = 250;
             recording = false; // stop recording
-            inSignal = offHEX;
+            inSignal = offHEX; //not working..
             Off(); //not working..
           }
           else
@@ -464,13 +467,7 @@ void loop()
             eepromColAddr++;   // on to the next colour
             eepromFlashAddr++; // on to the next flash
 
-            // if (eepromColAddr > 49)
-            // { // too much go back
-            //   // Serial.println("too much record, go back!");
-            //   eepromTimeAddr = 199;  // overwrite last timing again?
-            //   eepromColAddr = 249;   // overwrite last colour again?
-            //   eepromFlashAddr = 299; // overwrite last flash again?
-            // }
+            
           }
         }
       }
@@ -706,15 +703,8 @@ void testCommand()
   }
   else if (inSignal == onHEX)
   { // start recording
-    // todo: re-set all eeprom
-    // indicator for recording: Red() - not working?
     // Serial.println("RECORD START");
     On();
-    // inSignal = prevSignal;
-    // recStartTime = millis();
-    // playing = false;
-    // recording = true;
-    // Red();
   }
 }
 
@@ -770,36 +760,72 @@ void White()
 // 7h Fade
 void Fade()
 {
-  long fadeSpeed = 500;
-  // delayMicroseconds was causing an issue so replaced with another Demo - might change this at some point.
+  // delayMicroseconds fade software pwm was causing an issue so replaced with another Demo - might change this at some point.
   unsigned long currentMillis = millis();
+  if (upDownFade)
+  {
+    if (fadeSpeed > 0) 
+    {
+      fadeSpeed--;
+
+    } 
+    else
+    {
+      upDownFade = false;
+    }
+
+  } 
+  else
+  {
+    if (fadeSpeed < 5000)
+    {
+      fadeSpeed ++;
+    }
+    else
+    {
+      upDownFade = true;
+    }
+  }
+  
   if (currentMillis - previousMillis >= fadeSpeed)
   {
     // save the last time you blinked the LED
     previousMillis = currentMillis;
     if (rainbowWay == 0)
     {
-      Red();
+      digitalWrite(redLed, HIGH);
+      digitalWrite(greenLed, LOW);
+      digitalWrite(blueLed, LOW);
     }
     else if (rainbowWay == 1)
     {
-      Green();
+      digitalWrite(redLed, HIGH);
+      digitalWrite(greenLed, HIGH);
+      digitalWrite(blueLed, LOW);
     }
     else if (rainbowWay == 2)
     {
-      Blue();
+      digitalWrite(redLed, LOW);
+      digitalWrite(greenLed, HIGH);
+      digitalWrite(blueLed, LOW);
     }
     else if (rainbowWay == 3)
     {
-      Cyan();
+      digitalWrite(redLed, LOW);
+      digitalWrite(greenLed, HIGH);
+      digitalWrite(blueLed, HIGH);
     }
     else if (rainbowWay == 4)
     {
-      Yellow();
+      digitalWrite(redLed, LOW);
+      digitalWrite(greenLed, LOW);
+      digitalWrite(blueLed, HIGH);
     }
     else if (rainbowWay == 5)
     {
-      Magenta();
+      digitalWrite(redLed, HIGH);
+      digitalWrite(greenLed, LOW);
+      digitalWrite(blueLed, HIGH);
     }
     rainbowWay++;
     if (rainbowWay > 5)
@@ -807,86 +833,7 @@ void Fade()
       rainbowWay = 0;
     }
   }
-  // after some testing, on attiny85 Red and Blue pins support pwm but green does not. Need another solution for fading:
-  // so here it is:
-
-  // for (int i = 1; i < fadeSpeed; i++)
-  // {
-  //   digitalWrite(blueLed, HIGH);
-  //   delayMicroseconds(i);
-  //   digitalWrite(blueLed, LOW);
-  //   delayMicroseconds(fadeSpeed - i);
-
-  //   digitalWrite(greenLed, LOW);
-  //   delayMicroseconds(i);
-  //   digitalWrite(greenLed, HIGH);
-  //   delayMicroseconds(fadeSpeed - i);
-  // }
-
-  // for (int i = fadeSpeed; i > 0; i--)
-  // {
-  //   digitalWrite(redLed, LOW);
-  //   delayMicroseconds(i);
-  //   digitalWrite(redLed, HIGH);
-  //   delayMicroseconds(fadeSpeed - i);
-
-  //   digitalWrite(greenLed, HIGH);
-  //   delayMicroseconds(i);
-  //   digitalWrite(greenLed, LOW);
-  //   delayMicroseconds(fadeSpeed - i);
-  // }
-
-  // for (int i = 1; i < fadeSpeed; i++)
-  // {
-  //   digitalWrite(greenLed, LOW);
-  //   delayMicroseconds(i);
-  //   digitalWrite(greenLed, HIGH);
-  //   delayMicroseconds(fadeSpeed - i);
-
-  //   digitalWrite(redLed, HIGH);
-  //   delayMicroseconds(i);
-  //   digitalWrite(redLed, LOW);
-  //   delayMicroseconds(fadeSpeed - i);
-  // }
-
-  // for (int i = fadeSpeed; i > 0; i--)
-  // {
-  //   digitalWrite(greenLed, HIGH);
-  //   delayMicroseconds(i);
-  //   digitalWrite(greenLed, LOW);
-  //   delayMicroseconds(fadeSpeed - i);
-
-  //   digitalWrite(redLed, LOW);
-  //   delayMicroseconds(i);
-  //   digitalWrite(redLed, HIGH);
-  //   delayMicroseconds(fadeSpeed - i);
-  // }
-
-  // for (int i = 1; i < fadeSpeed; i++)
-  // {
-  //   digitalWrite(redLed, HIGH);
-  //   delayMicroseconds(i);
-  //   digitalWrite(redLed, LOW);
-  //   delayMicroseconds(fadeSpeed - i);
-
-  //   digitalWrite(blueLed, LOW);
-  //   delayMicroseconds(i);
-  //   digitalWrite(blueLed, HIGH);
-  //   delayMicroseconds(fadeSpeed - i);
-  // }
-
-  // for (int i = fadeSpeed; i > 0; i--)
-  // {
-  //   digitalWrite(redLed, HIGH);
-  //   delayMicroseconds(i);
-  //   digitalWrite(redLed, LOW);
-  //   delayMicroseconds(fadeSpeed - i);
-
-  //   digitalWrite(blueLed, LOW);
-  //   delayMicroseconds(i);
-  //   digitalWrite(blueLed, HIGH);
-  //   delayMicroseconds(fadeSpeed - i);
-  // }
+  
 }
 // 8i Strobe+
 void Strobeplus()
