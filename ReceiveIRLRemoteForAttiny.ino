@@ -118,13 +118,13 @@ Extra5:
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // include PinChangeInterrupt library* BEFORE IRLremote to access more pins if needed
-#include "PinChangeInterrupt.h"
+// #include "PinChangeInterrupt.h"
 //
 #include <EEPROM.h>
 #include "IRLremote.h"
 
 // Choose a valid PinInterrupt or PinChangeInterrupt* pin of your Arduino board
-#define pinIR 4 // this is actually 4 on K8, does the library support this though? NOOOOOO!!!
+#define pinIR 2 // this is actually 4 on K8, does the library support this though? NOOOOOO!!!
 
 // Choose the IR protocol of your remote. See the other example for this.
 CNec IRLremote;
@@ -138,9 +138,9 @@ boolean ready = false;
 // these are the exact same pins as K8:
 // Blue: 1, Green: 3, Red: 2 on K8. Tested now - correct.
 
-int blueLed = 1;  // 1 on attiny - change to 5 on UNO to avoid //Serial conflict
-int greenLed = 3; // middle
-int redLed = 2;   // Actually 2 on K8
+int blueLed = 9;  // 1 on attiny - change to 5 on UNO to avoid //Serial conflict
+int greenLed = 10; // middle
+int redLed = 11;   // Actually 2 on K8
 int delayTime = 25;
 
 int selection = 0;
@@ -245,6 +245,7 @@ void setup()
   //   Start reading the remote. PinInterrupt or PinChangeInterrupt* will automatically be selected
   if (!IRLremote.begin(pinIR))
   {
+
   }
 
   // TODO: optimize EEPROM usage, how much more can I do with it?
