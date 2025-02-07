@@ -712,51 +712,51 @@ void testCommand()
 // 0a
 void Red()
 {
-  digitalWrite(redLed, HIGH);
-  digitalWrite(blueLed, LOW);
-  digitalWrite(greenLed, LOW);
+  digitalWrite(redLed, LOW);
+  digitalWrite(blueLed, HIGH);
+  digitalWrite(greenLed, HIGH);
 }
 // 1b green
 void Green()
 {
-  digitalWrite(greenLed, HIGH);
-  digitalWrite(blueLed, LOW);
-  digitalWrite(redLed, LOW);
+  digitalWrite(greenLed, LOW);
+  digitalWrite(blueLed, HIGH);
+  digitalWrite(redLed, HIGH);
 }
 // 2c blue
 void Blue()
 {
-  digitalWrite(blueLed, HIGH);
-  digitalWrite(redLed, LOW);
-  digitalWrite(greenLed, LOW);
+  digitalWrite(blueLed, LOW);
+  digitalWrite(redLed, HIGH);
+  digitalWrite(greenLed, HIGH);
 }
 // 3d Yellow
 void Yellow()
 {
-  digitalWrite(greenLed, HIGH);
-  digitalWrite(redLed, HIGH);
-  digitalWrite(blueLed, LOW);
+  digitalWrite(greenLed, LOW);
+  digitalWrite(redLed, LOW);
+  digitalWrite(blueLed, HIGH);
 }
 // 4e Cyan
 void Cyan()
 {
-  digitalWrite(blueLed, HIGH);
-  digitalWrite(greenLed, HIGH);
-  digitalWrite(redLed, LOW);
+  digitalWrite(blueLed, LOW);
+  digitalWrite(greenLed, LOW);
+  digitalWrite(redLed, HIGH);
 }
 // 5f Magenta
 void Magenta()
 {
-  digitalWrite(blueLed, HIGH);
-  digitalWrite(redLed, HIGH);
-  digitalWrite(greenLed, LOW);
+  digitalWrite(blueLed, LOW);
+  digitalWrite(redLed, LOW);
+  digitalWrite(greenLed, HIGH);
 }
 // 6g White
 void White()
 {
-  digitalWrite(blueLed, HIGH);
-  digitalWrite(greenLed, HIGH);
-  digitalWrite(redLed, HIGH);
+  digitalWrite(blueLed, LOW);
+  digitalWrite(greenLed, LOW);
+  digitalWrite(redLed, LOW);
 }
 // 7h Fade
 void Fade()
@@ -794,39 +794,39 @@ void Fade()
     previousMillis = currentMillis;
     if (rainbowWay == 0)
     {
-      digitalWrite(redLed, HIGH);
-      digitalWrite(greenLed, LOW);
-      digitalWrite(blueLed, LOW);
+      digitalWrite(redLed, LOW);
+      digitalWrite(greenLed, HIGH);
+      digitalWrite(blueLed, HIGH);
     }
     else if (rainbowWay == 1)
     {
-      digitalWrite(redLed, HIGH);
-      digitalWrite(greenLed, HIGH);
-      digitalWrite(blueLed, LOW);
+      digitalWrite(redLed, LOW);
+      digitalWrite(greenLed, LOW);
+      digitalWrite(blueLed, HIGH);
     }
     else if (rainbowWay == 2)
     {
-      digitalWrite(redLed, LOW);
-      digitalWrite(greenLed, HIGH);
-      digitalWrite(blueLed, LOW);
-    }
-    else if (rainbowWay == 3)
-    {
-      digitalWrite(redLed, LOW);
-      digitalWrite(greenLed, HIGH);
-      digitalWrite(blueLed, HIGH);
-    }
-    else if (rainbowWay == 4)
-    {
-      digitalWrite(redLed, LOW);
-      digitalWrite(greenLed, LOW);
-      digitalWrite(blueLed, HIGH);
-    }
-    else if (rainbowWay == 5)
-    {
       digitalWrite(redLed, HIGH);
       digitalWrite(greenLed, LOW);
       digitalWrite(blueLed, HIGH);
+    }
+    else if (rainbowWay == 3)
+    {
+      digitalWrite(redLed, HIGH);
+      digitalWrite(greenLed, LOW);
+      digitalWrite(blueLed, LOW);
+    }
+    else if (rainbowWay == 4)
+    {
+      digitalWrite(redLed, HIGH);
+      digitalWrite(greenLed, HIGH);
+      digitalWrite(blueLed, LOW);
+    }
+    else if (rainbowWay == 5)
+    {
+      digitalWrite(redLed, LOW);
+      digitalWrite(greenLed, HIGH);
+      digitalWrite(blueLed, LOW);
     }
     rainbowWay++;
     if (rainbowWay > 5)
@@ -951,12 +951,14 @@ void Halfstrobe()
     // if the LED is off turn it on and vice-versa:
     if (ledState == LOW)
     {
-      Red();
+      digitalWrite(redLed, LOW);
+      digitalWrite(blueLed, HIGH);
       ledState = HIGH;
     }
     else
     {
-      Blue();
+      digitalWrite(blueLed, LOW);
+      digitalWrite(redLed, HIGH);
       ledState = LOW;
     }
   }
@@ -972,12 +974,14 @@ void BGStrobe()
     // if the LED is off turn it on and vice-versa:
     if (ledState == LOW)
     {
-      Blue();
+      digitalWrite(blueLed, LOW);
+      digitalWrite(greenLed, HIGH);
       ledState = HIGH;
     }
     else
     {
-      Green();
+      digitalWrite(greenLed, LOW);
+      digitalWrite(blueLed, HIGH);
       ledState = LOW;
     }
   }
@@ -993,12 +997,14 @@ void GRStrobe()
     // if the LED is off turn it on and vice-versa:
     if (ledState == LOW)
     {
-      Green();
+      digitalWrite(greenLed, LOW);
+      digitalWrite(redLed, HIGH);
       ledState = HIGH;
     }
     else
     {
-      Red();
+      digitalWrite(redLed, LOW);
+      digitalWrite(greenLed, HIGH);
       ledState = LOW;
     }
   }
@@ -1006,9 +1012,9 @@ void GRStrobe()
 // 14oOff
 void Off()
 {
-  digitalWrite(greenLed, LOW);
-  digitalWrite(blueLed, LOW);
-  digitalWrite(redLed, LOW);
+  digitalWrite(greenLed, HIGH);
+  digitalWrite(blueLed, HIGH);
+  digitalWrite(redLed, HIGH);
 }
 void On()
 {
