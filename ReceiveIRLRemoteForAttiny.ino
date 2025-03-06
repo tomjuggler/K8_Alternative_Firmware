@@ -246,20 +246,12 @@ void setup()
 
   for (int i = 0; i < maxEepromSignalNum; i++)
   {
-    timings[i] = EEPROMReadlong(i * 4);
-    // Serial.print("timings ");
-    // Serial.print(i);
-    // Serial.print (" = ");
-    // Serial.println(timings[i]);
-    colours[i] = EEPROM.read(200 + i);
-    // Serial.print("colours ");
-    // Serial.print(i);
-    // Serial.print(" = ");
-    // Serial.println(colours[i]);
+    timings[i] = preferences.getLong(("time" + String(i)).c_str(), 0);
+    colours[i] = preferences.getUChar(("col" + String(200 + i)).c_str(), 0);
   }
 
   // get saved value for interval and flashy:
-  interval = EEPROMReadlong(500);
+  interval = preferences.getLong("interval", 125);
   if (interval > 500 || interval < 5)
   {
     interval = 125;
@@ -445,14 +437,11 @@ void loop()
           else
           {
             // Note: TODO: need to record strobing/not strobing information as well as strobe speed here too. or just press strobe button...buggy though
-            EEPROMWritelong(eepromTimeAddr, millis() - recStartTime); // save this in Array for immediate playback/testing?
-            timings[eepromTimeAddr / 4] = millis() - recStartTime;    // save for immediate playback
-            // Serial.print("saved time: ");
-            // Serial.print(millis()-recStartTime);
-            preferences.putUChar(String(eepromColAddr).c_str(), inSignal); // Save in Preferences
-            colours[eepromColAddr - 200] = inSignal; // save for immediate playback
-
-            preferences.putUChar(String(eepromFlashAddr).c_str(), flashy);
+            preferences.putLong(("time" + String(eepromTimeAddr/4)).c_str(), millis() - recStartTime);
+            timings[eepromTimeAddr / 4] = millis() - recStartTime;
+            preferences.putUChar(("col" + String(eepromColAddr)).c_str(), inSignal);
+            colours[eepromColAddr - 200] = inSignal;
+            preferences.putUChar(("flash" + String(eepromFlashAddr)).c_str(), flashy);
             flashes[eepromColAddr - 200] = flashy;
             // Serial.print(" Signal: ");
             // Serial.println(inSignal);
@@ -1020,9 +1009,9 @@ void On()
       timings[i] = 0;             // time
       colours[i] = 0;             // colour
       flashes[i] = 0;             // flash off
-      EEPROMWritelong(i * 4, 0);  // time
-      preferences.putUChar(String(i + 200).c_str(), 255); // colour
-      preferences.putUChar(String(i + 250).c_str(), 0);   // flashy
+      preferences.putLong(("time" + String(i)).c_str(), 0);
+      preferences.putUChar(("col" + String(200 + i)).c_str(), 255);
+      preferences.putUChar(("flash" + String(250 + i)).c_str(), 0);
     }
 
     eepromTimeAddr = 0;  // re-set to first address
@@ -1041,7 +1030,7 @@ void Next()
   {
     interval = 5;
   }
-  EEPROMWritelong(500, interval);
+  preferences.putLong("interval", interval);
 }
 // 16q Demo
 void Demo()
@@ -1167,12 +1156,3 @@ void Extra5()
   Off();
 }
 
-// Write long value to Preferences
-void EEPROMWritelong(int address, long value) {
-    preferences.putLong(String(address).c_str(), value);
-}
-
-// Read long value from Preferences
-long EEPROMReadlong(long address) {
-    return preferences.getLong(String(address).c_str(), 0);
-}
