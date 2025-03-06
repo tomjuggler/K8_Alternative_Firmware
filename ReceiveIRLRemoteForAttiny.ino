@@ -117,30 +117,19 @@ Extra5:
 //#define digitalPinToInterrupt(p) ((p) == 2 ? 0 : ((p) == 3 ? 1 : NOT_AN_INTERRUPT))
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// include PinChangeInterrupt library* BEFORE IRLremote to access more pins if needed
-// #include "PinChangeInterrupt.h"
-//
-#include <EEPROM.h>
-#include "IRLremote.h"
+#include <Preferences.h>
+#include <IRremote.hpp>
 
-// Choose a valid PinInterrupt or PinChangeInterrupt* pin of your Arduino board
-#define pinIR 2 // this is actually 4 on K8, does the library support this though? NOOOOOO!!!
+#define IR_RX_PIN 6  // Choose suitable GPIO
+#define IR_TX_PIN 7  // If transmitting needed
 
-// Choose the IR protocol of your remote. See the other example for this.
-CNec IRLremote;
-// CPanasonic IRLremote;
-// CHashIR IRLremote;
-//#define IRLremote Sony12
+// LED Pins for ESP32-C3
+const int redLed = 3;
+const int greenLed = 4;
+const int blueLed = 5;
 
-//#define pinLed 3
-
+Preferences preferences;
 boolean ready = false;
-// these are the exact same pins as K8:
-// Blue: 1, Green: 3, Red: 2 on K8. Tested now - correct.
-
-int blueLed = 9;  // 1 on attiny - change to 5 on UNO to avoid //Serial conflict
-int greenLed = 10; // middle
-int redLed = 11;   // Actually 2 on K8
 int delayTime = 25;
 
 int selection = 0;
@@ -242,11 +231,16 @@ void setup()
     Green();
   */
 
-  //   Start reading the remote. PinInterrupt or PinChangeInterrupt* will automatically be selected
-  if (!IRLremote.begin(pinIR))
-  {
-
-  }
+  // Initialize IR receiver
+  IrReceiver.begin(IR_RX_PIN, ENABLE_LED_FEEDBACK);
+  
+  // Initialize Preferences for storage
+  preferences.begin("ir-storage", false);
+  
+  // Initialize LED pins
+  pinMode(redLed, OUTPUT);
+  pinMode(greenLed, OUTPUT);
+  pinMode(blueLed, OUTPUT);
 
   // TODO: optimize EEPROM usage, how much more can I do with it?
 
@@ -421,17 +415,15 @@ void loop()
   }
 
   // Check if new IR protocol data is available:
-
-  if (IRLremote.available())
-  {
-    auto data = IRLremote.read();
-    if (data.command == 0x0)
-    {
-      // inbetween signal do nothing...
+  if (IrReceiver.decode()) {
+    if (IrReceiver.decodedIRData.protocol == NEC) {
+      if (IrReceiver.decodedIRData.command == 0x0) {
+        // inbetween signal do nothing...
+      }
+      else {
+        inSignal = IrReceiver.decodedIRData.command;
     }
-    else
-    {
-      inSignal = data.command;
+    IrReceiver.resume();
       if (recording)
       {                                              // recording activated by pressing 'ON' button
         if (inSignal == onHEX || inSignal == offHEX) // don't save "RECORD" signal or "PLAY" signal:
@@ -1029,8 +1021,8 @@ void On()
       colours[i] = 0;             // colour
       flashes[i] = 0;             // flash off
       EEPROMWritelong(i * 4, 0);  // time
-      EEPROM.write(i + 200, 255); // colour
-      EEPROM.write(i + 250, 0);   // flashy
+      preferences.putUChar(String(i + 200).c_str(), 255); // colour
+      preferences.putUChar(String(i + 250).c_str(), 0);   // flashy
     }
 
     eepromTimeAddr = 0;  // re-set to first address
@@ -1175,34 +1167,12 @@ void Extra5()
   Off();
 }
 
-// This function will write a 4 byte (32bit) long to the eeprom at
-// the specified address to address + 3.
-void EEPROMWritelong(int address, long value)
-{
-  // Decomposition from a long to 4 bytes by using bitshift.
-  // One = Most significant -> Four = Least significant byte
-  byte four = (value & 0xFF);
-  byte three = ((value >> 8) & 0xFF);
-  byte two = ((value >> 16) & 0xFF);
-  byte one = ((value >> 24) & 0xFF);
-
-  // Write the 4 bytes into the eeprom memory.
-  EEPROM.write(address, four);
-  EEPROM.write(address + 1, three);
-  EEPROM.write(address + 2, two);
-  EEPROM.write(address + 3, one);
+// Write long value to Preferences
+void EEPROMWritelong(int address, long value) {
+    preferences.putLong(String(address).c_str(), value);
 }
 
-// This function will return a 4 byte (32bit) long from the eeprom
-// at the specified address to address + 3.
-long EEPROMReadlong(long address)
-{
-  // Read the 4 bytes from the eeprom memory.
-  long four = EEPROM.read(address);
-  long three = EEPROM.read(address + 1);
-  long two = EEPROM.read(address + 2);
-  long one = EEPROM.read(address + 3);
-
-  // Return the recomposed long by using bitshift.
-  return ((four << 0) & 0xFF) + ((three << 8) & 0xFFFF) + ((two << 16) & 0xFFFFFF) + ((one << 24) & 0xFFFFFFFF);
+// Read long value from Preferences
+long EEPROMReadlong(long address) {
+    return preferences.getLong(String(address).c_str(), 0);
 }
