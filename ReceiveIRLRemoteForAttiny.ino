@@ -272,7 +272,7 @@ void setup()
   // todo: to save eeprom writes, need to re-factor the strobing patterns, as they call red() blue() etc all the time
   // this would wear eeprom too fast. For now not saving last pattern on button press.
   // lastPattern = 5;
-  lastPattern = EEPROM.read(510); // this is not reading correctly. Why?
+  lastPattern = preferences.getUChar("lastPattern", 0); // Read from Preferences
   // delay(100); //delay for read?
 
   lastPattern++;
@@ -281,7 +281,7 @@ void setup()
     lastPattern = 0;
   }
   // save pattern for next time:
-  EEPROM.write(510, lastPattern);
+  preferences.putUChar("lastPattern", lastPattern);
   // delay(100); //write delay?
   // run pattern (commented some not working/not applicable)
   // test:
@@ -449,10 +449,10 @@ void loop()
             timings[eepromTimeAddr / 4] = millis() - recStartTime;    // save for immediate playback
             // Serial.print("saved time: ");
             // Serial.print(millis()-recStartTime);
-            EEPROM.write(eepromColAddr, inSignal);   // and save in Array too?
+            preferences.putUChar(String(eepromColAddr).c_str(), inSignal); // Save in Preferences
             colours[eepromColAddr - 200] = inSignal; // save for immediate playback
 
-            EEPROM.write(eepromFlashAddr, flashy);
+            preferences.putUChar(String(eepromFlashAddr).c_str(), flashy);
             flashes[eepromColAddr - 200] = flashy;
             // Serial.print(" Signal: ");
             // Serial.println(inSignal);
