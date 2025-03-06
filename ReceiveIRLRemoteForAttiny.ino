@@ -212,8 +212,8 @@ void setup()
   pinMode(blueLed, OUTPUT);
   pinMode(greenLed, OUTPUT);
   pinMode(redLed, OUTPUT);
-  // Serial.begin(115200); // //Serial conflicts with Pin1 - Green I think!
-  // Serial.println("Startup");
+  Serial.begin(115200); // //Serial conflicts with Pin1 - Green I think!
+  Serial.println("Startup");
 
   // Startup sequence?:
   // Red();
@@ -256,8 +256,8 @@ void setup()
   {
     interval = 125;
   }
-  // Serial.print("Interval: ");
-  // Serial.println(interval);
+  Serial.print("Interval: ");
+  Serial.println(interval);
 
   // Red();
   // increment patterns on reboot:
@@ -377,14 +377,14 @@ void loop()
     // another sanity check:
     if (timings[runNum] > 0)
     {
-      // //Serial.print("Checking timing for ");
-      // //Serial.print(timings[runNum]);
-      // //Serial.println(" timings[runNum");
+      Serial.print("Checking timing for ");
+      Serial.print(timings[runNum]);
+      Serial.println(" timings[runNum");
       currentMillis2 = millis() - recStartTime; // reset the clock! At the beginning of play this should be 0!
       if (currentMillis2 < timings[runNum])
       {
-        // //Serial.print("< ");
-        // //Serial.println(runNum);
+        Serial.print("< ");
+        Serial.println(runNum);
       }
       //   I think currently timings[] array must be in time order to work. If the last time is smaller than the previous nothing happens. todo: sort?
       else if (currentMillis2 >= timings[runNum] && currentMillis2 <= timings[runNum + 1]) // todo: this omits the last signal..
@@ -672,7 +672,7 @@ void testCommand()
   }
   else if (inSignal == offHEX)
   { // start playing back recording
-    // Serial.println("PLAY START");
+    Serial.println("PLAY START");
     runNum = 0; // reset to start again
     recStartTime = millis();
     recording = false;
@@ -685,7 +685,7 @@ void testCommand()
   }
   else if (inSignal == onHEX)
   { // start recording
-    // Serial.println("RECORD START");
+    Serial.println("RECORD START");
     On();
   }
 }
@@ -999,7 +999,7 @@ void Off()
 }
 void On()
 {
-  // Serial.println("ON");
+  Serial.println("ON");
   // re-set eeprom recording data to 0:
   //  Note: need to record strobing/not strobing information as well as strobe speed here too. or just press strobe button...buggy though
   if (!recording)
