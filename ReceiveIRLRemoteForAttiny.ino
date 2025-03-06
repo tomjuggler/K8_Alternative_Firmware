@@ -126,7 +126,7 @@ Extra5:
 // LED Pins for ESP32-C3
 const int redLed = 3;
 const int greenLed = 4;
-const int blueLed = 5;
+const int blueLed = 2;
 
 Preferences preferences;
 boolean ready = false;
