@@ -1079,7 +1079,7 @@ void Previous()
   {
     interval = 500;
   }
-  EEPROMWritelong(500, interval);
+  preferences.putLong("interval", interval);
 }
 
 void Extra1()
